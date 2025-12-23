@@ -12,6 +12,7 @@ import androidx.core.content.PermissionChecker
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.wear.compose.material3.AppScaffold
 import me.chabad360.zmanim.wearos.presentation.theme.ZmanimTheme
 import me.chabad360.zmanim.wearos.presentation.ui.ZmanimScreen
 
@@ -67,6 +68,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun WearApp(viewModel: MainViewModel) {
     ZmanimTheme {
-        ZmanimScreen(viewModel = viewModel)
+        AppScaffold () {
+            ZmanimScreen(viewModel = viewModel)
+        }
     }
 }

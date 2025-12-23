@@ -11,6 +11,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import io.github.kdroidfilter.kosherkotlin.ComplexZmanimCalendar
 import io.github.kdroidfilter.kosherkotlin.Zman
 import io.github.kdroidfilter.kosherkotlin.ZmanimCalendar
 import io.github.kdroidfilter.kosherkotlin.metadata.ZmanDefinition
@@ -104,7 +105,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
 
     @OptIn(ExperimentalTime::class)
     private fun computeZmanim(geo: GeoLocation): List<Zman.DateBased> {
-        val zmanimCal = ZmanimCalendar(geo)
+        val zmanimCal = ComplexZmanimCalendar(geo)
         return zmanimCal.allZmanim.sortedBy { it.value }
     }
 }
