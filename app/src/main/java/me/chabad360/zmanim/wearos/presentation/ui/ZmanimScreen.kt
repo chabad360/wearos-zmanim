@@ -56,7 +56,7 @@ fun ZmanimScreen(viewModel: MainViewModel) {
     val context = LocalContext.current
 
     val visibleZmanim by remember(state.zmanim, state.disabledIds) {
-        derivedStateOf { state.zmanim.filter { it.zman.value != null && it.zman.definition.type !in state.disabledIds } }
+        derivedStateOf { state.zmanim.filter { it.zman.value != null && it.key !in state.disabledIds } }
     }
 
     LaunchedEffect(state.error) {
@@ -141,7 +141,6 @@ val formatter = ZmanDescriptionFormatter()
 private fun ZmanRow(item: ZmanDisplay) {
     val name = item.name
     val timeText = item.timeText
-    val authorities = item.zman.definition.supportingAuthorities.joinToString(", ") { it.format() }
 
     Card (
         onClick = {}
@@ -155,10 +154,6 @@ private fun ZmanRow(item: ZmanDisplay) {
             Text(
                 text = timeText,
                 style = MaterialTheme.typography.titleLarge
-            )
-            Text(
-                text = authorities,
-                style = MaterialTheme.typography.bodySmall
             )
         }
     }

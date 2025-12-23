@@ -19,11 +19,7 @@ import me.chabad360.zmanim.wearos.presentation.ui.ZmanimScreen
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
-        object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MainViewModel(applicationContext) as T
-            }
-        }
+        MainViewModelFactory(applicationContext)
     }
 
     private val permissionLauncher = registerForActivityResult(
