@@ -1,18 +1,25 @@
 package me.chabad360.zmanim.wearos.presentation.ui
 
-import androidx.compose.foundation.background
+import android.text.format.DateFormat
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -20,183 +27,182 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.lazy.AutoCenteringParams
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.ToggleChip
+import androidx.wear.compose.material3.Card
+import androidx.wear.compose.material3.EdgeButton
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.IconButton
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.Text
+import io.github.kdroidfilter.kosherkotlin.Zman
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import me.chabad360.zmanim.wearos.R
 import me.chabad360.zmanim.wearos.presentation.MainViewModel
 import me.chabad360.zmanim.wearos.presentation.UiState
-import me.chabad360.zmanim.wearos.presentation.ZmanItem
+import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalWearFoundationApi::class)
 @Composable
 fun ZmanimScreen(viewModel: MainViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val is24h = DateFormat.is24HourFormat(LocalContext.current)
+    val context = LocalContext.current
+    var currentTime by remember { mutableStateOf(Clock.System.now()) }
 
-    Scaffold(
-        timeText = { TimeText() },
+    LaunchedEffect(state.timeZone) {
+        while (isActive) {
+            currentTime = Clock.System.now()
+            delay(30_000)
+        }
+    }
+
+    LaunchedEffect(state.error) {
+        state.error?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    }
+
+    ScalingLazyColumn(
+        autoCentering = AutoCenteringParams(itemIndex = 1),
     ) {
-        if (state.showingEdit) {
-            EditZmanimScreen(state = state, onBack = { viewModel.toggleEdit() }, onToggle = viewModel::toggleZman)
-        } else {
-            MainScreenContent(
-                state = state,
-                onRefresh = viewModel::refreshLocation,
-                onToggleEdit = viewModel::toggleEdit,
-            )
+        item {
+            Text(text = stringResource(id = R.string.app_name), style = MaterialTheme.typography.titleLarge)
+        }
+        item {
+            CurrentTimeHeader(currentTime, state.timeZone, is24h)
+        }
+        items(state.zmanim.filter {!state.disabledIds.contains(it.definition.type)}) { item ->
+            ZmanRow(item = item, timeZone = state.timeZone, is24h = is24h)
+        }
+        item { Spacer(modifier = Modifier.height(8.dp)) }
+        item {
+            IconButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = viewModel::toggleEdit
+            ) {
+                Icon(imageVector = Icons.Outlined.Edit, contentDescription = stringResource(id = R.string.edit_zmanim))
+            }
+        }
+        item {
+            LocationInfo(state)
+        }
+        item {
+            EdgeButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = viewModel::refreshLocation
+            ) {
+                Text(text = stringResource(id = R.string.refresh))
+            }
         }
     }
 }
 
 @Composable
-private fun MainScreenContent(
-    state: UiState,
-    onRefresh: () -> Unit,
-    onToggleEdit: () -> Unit,
-) {
-    Column(
+private fun LocationInfo(state: UiState) {
+    val locationText = state.location ?: stringResource(id = R.string.location_error)
+    Text(
         modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colors.background)
-            .padding(horizontal = 8.dp)
-    ) {
-        LocationHeader(state = state, onRefresh = onRefresh)
-        StaleBanner(state = state)
-        ZmanimList(
-            state = state,
-            modifier = Modifier
-                .fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Chip(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = onToggleEdit,
-            label = { Text(text = stringResource(id = R.string.edit_zmanim)) },
-            colors = ChipDefaults.secondaryChipColors()
-        )
-    }
-}
-
-@Composable
-private fun LocationHeader(state: UiState, onRefresh: () -> Unit) {
-    val locationText = when {
-        state.isRefreshing -> stringResource(id = R.string.location_updating)
-        state.error != null -> stringResource(id = R.string.location_error)
-        state.location != null -> stringResource(id = R.string.last_known_location, state.location)
-        else -> stringResource(id = R.string.location_error)
-    }
-
-    Chip(
-        modifier = Modifier
-            .fillMaxWidth(),
-        onClick = onRefresh,
-        label = {
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = locationText,
-                textAlign = TextAlign.Center,
-            )
-        },
-        enabled = !state.isRefreshing
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        text = stringResource(id = R.string.zmanim_header) + " for " + locationText,
+        textAlign = TextAlign.Center,
+        style = MaterialTheme.typography.bodyExtraSmall
     )
 }
 
 @Composable
 private fun StaleBanner(state: UiState) {
-    if (!state.isStale) return
     Text(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         text = stringResource(id = R.string.stale_location),
         textAlign = TextAlign.Center,
-        color = MaterialTheme.colors.onSurface
+        color = MaterialTheme.colorScheme.onSurface
     )
 }
 
-@OptIn(ExperimentalWearFoundationApi::class)
 @Composable
-private fun ZmanimList(state: UiState, modifier: Modifier = Modifier) {
-    ScalingLazyColumn(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        autoCentering = AutoCenteringParams(itemIndex = 0),
-        anchorType = ScalingLazyListAnchorType.ItemStart
+private fun ZmanRow(item: Zman.DateBased, timeZone: TimeZone, is24h: Boolean) {
+    val name = item.definition.type.friendlyNameEnglish
+    val timeText = formatTime(item, timeZone, is24h)
+    val authorities = item.definition.supportingAuthorities
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        onClick = {}
     ) {
-        items(state.zmanim) { item ->
-            ZmanRow(item = item)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 6.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Schedule,
+                contentDescription = null,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = name,
+                    textAlign = TextAlign.Start,
+                    style = MaterialTheme.typography.bodyExtraSmall
+                )
+                if (!authorities.isNullOrEmpty()) {
+                    Text(
+                        text = authorities.joinToString(),
+                        textAlign = TextAlign.Start,
+                        style = MaterialTheme.typography.bodyExtraSmall
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = timeText,
+                textAlign = TextAlign.End,
+                style = MaterialTheme.typography.titleLarge
+            )
         }
     }
 }
 
+@OptIn(ExperimentalTime::class)
 @Composable
-private fun ZmanRow(item: ZmanItem) {
-    val timeText = item.time?.toString() ?: stringResource(id = R.string.zman_time_unknown)
-    ToggleChip(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        checked = item.enabled,
-        onCheckedChange = { },
-        enabled = false,
-        label = { Text(text = item.name) },
-        secondaryLabel = { Text(text = timeText) },
-        toggleControl = {
-            Text(text = if (item.enabled) stringResource(id = R.string.enabled) else stringResource(id = R.string.disabled))
-        }
-    )
+private fun formatTime(item: Zman.DateBased, timeZone: TimeZone, is24h: Boolean): String {
+    val lt = item.value?.toLocalDateTime(timeZone)?.time ?: return "--:--"
+    return formatLocalTime(lt.hour, lt.minute, is24h)
+}
+
+private fun formatNow(now: Instant, timeZone: TimeZone, is24h: Boolean): String {
+    val lt = now.toLocalDateTime(timeZone).time
+    return formatLocalTime(lt.hour, lt.minute, is24h)
+}
+
+private fun formatLocalTime(hour: Int, minute: Int, is24h: Boolean): String {
+    return if (is24h) {
+        String.format("%02d:%02d", hour, minute)
+    } else {
+        val hour12 = (hour % 12).let { if (it == 0) 12 else it }
+        val ampm = if (hour < 12) "AM" else "PM"
+        String.format("%d:%02d %s", hour12, minute, ampm)
+    }
 }
 
 @Composable
-private fun EditZmanimScreen(
-    state: UiState,
-    onBack: () -> Unit,
-    onToggle: (String) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colors.background)
-            .padding(horizontal = 8.dp)
-    ) {
-        Spacer(modifier = Modifier.height(4.dp))
+private fun CurrentTimeHeader(now: Instant, timeZone: TimeZone, is24h: Boolean) {
+    ListHeader {
         Text(
             modifier = Modifier.fillMaxWidth(),
-            text = stringResource(id = R.string.edit_zmanim),
+            text = "Current time: " + formatNow(now, timeZone, is24h),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.title3
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-        ) {
-            state.zmanim.forEach { item ->
-                ToggleChip(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                    checked = item.enabled,
-                    onCheckedChange = { onToggle(item.id) },
-                    label = { Text(text = item.name) },
-                    secondaryLabel = { Text(text = item.time?.toString() ?: stringResource(id = R.string.zman_time_unknown)) },
-                    toggleControl = {
-                        Text(text = if (item.enabled) stringResource(id = R.string.enabled) else stringResource(id = R.string.disabled))
-                    }
-                )
-            }
-        }
-        Chip(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = onBack,
-            label = { Text(text = stringResource(id = R.string.save)) }
+            style = MaterialTheme.typography.bodyMedium
         )
     }
 }

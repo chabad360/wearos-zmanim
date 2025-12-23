@@ -1,43 +1,111 @@
 package me.chabad360.zmanim.wearos.presentation
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
+import android.util.Log
+import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
+import io.github.kdroidfilter.kosherkotlin.Zman
+import io.github.kdroidfilter.kosherkotlin.ZmanimCalendar
+import io.github.kdroidfilter.kosherkotlin.metadata.ZmanDefinition
+import io.github.kdroidfilter.kosherkotlin.metadata.ZmanType
+import io.github.kdroidfilter.kosherkotlin.util.GeoLocation
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.time.LocalTime
+import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
+import java.util.Locale
+import kotlin.time.ExperimentalTime
 
-/**
- * Interim ViewModel exposing UI state needed by the main Wear screen.
- * Data is stubbed for now and will be wired to the real repository/use cases later.
- */
-class MainViewModel : ViewModel() {
+class MainViewModel(private val appContext: Context) : ViewModel() {
+
+    private val fused: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(appContext)
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     fun refreshLocation() {
-        viewModelScope.launch {
-            // simple fake refresh spinner for now
-            _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
-            _uiState.value = _uiState.value.copy(
-                isRefreshing = false,
-                location = _uiState.value.location
-            )
-        }
+        fun fallbackGeo(): GeoLocation = GeoLocation("Jerusalem", 31.778, 35.235, 0.0, TimeZone.of("Asia/Jerusalem"))
+        updateForGeo(fallbackGeo())
+
+        _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
+        val tz = TimeZone.currentSystemDefault()
+        fused.lastLocation
+            .addOnSuccessListener { loc ->
+                if (loc != null) {
+                    viewModelScope.launch(Dispatchers.Default) {
+                        updateForGeo(GeoLocation("${loc.latitude},${loc.longitude}", loc.latitude, loc.longitude, loc.altitude, tz))
+                    }
+                } else {
+                    Log.w("GPS", "fresh fix")
+                    // Try a fresh fix
+                    fused.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, CancellationTokenSource().token)
+                        .addOnSuccessListener { fresh ->
+                            viewModelScope.launch(Dispatchers.Default) {
+                                val geo = fresh?.let { GeoLocation("${it.latitude},${it.longitude}", it.latitude, it.longitude, it.altitude, tz) }
+                                if (geo != null) {
+                                    updateForGeo(geo)
+                                } else {
+                                    Log.w("GPS",  "unable to get location $geo", )
+                                    updateForGeo(fallbackGeo(), error = "Unable to acquire location")
+                                }
+                            }
+                        }
+                        .addOnFailureListener { err ->
+                            viewModelScope.launch(Dispatchers.Default) {
+                                Log.w("GPS",  err)
+                                updateForGeo(fallbackGeo(), error = err.message ?: "Unable to refresh location")
+                            }
+                        }
+                }
+            }
+            .addOnFailureListener { err ->
+                viewModelScope.launch(Dispatchers.Default) {
+                    Log.w("GPS",  err)
+                    updateForGeo(fallbackGeo(), error = err.message ?: "Unable to refresh location")
+                }
+            }
+    }
+
+    private fun updateForGeo(geo: GeoLocation, error: String? = null) {
+        val zmanim = computeZmanim(geo)
+        _uiState.value = _uiState.value.copy(
+            isRefreshing = false,
+            location = geo.locationName,
+            zmanim = zmanim,
+            timeZone = geo.timeZone,
+            disabledIds = _uiState.value.disabledIds,
+            isStale = false,
+            error = error
+        )
     }
 
     fun toggleEdit() {
         _uiState.value = _uiState.value.copy(showingEdit = !_uiState.value.showingEdit)
     }
 
-    fun toggleZman(id: String) {
+    fun toggleZman(id: ZmanType) {
         _uiState.value = _uiState.value.copy(
-            zmanim = _uiState.value.zmanim.map { item ->
-                if (item.id == id) item.copy(enabled = !item.enabled) else item
+            disabledIds = _uiState.value.disabledIds.toMutableSet().apply {
+                if (contains(id)) remove(id) else add(id)
             }
         )
+    }
+
+    @OptIn(ExperimentalTime::class)
+    private fun computeZmanim(geo: GeoLocation): List<Zman.DateBased> {
+        val zmanimCal = ZmanimCalendar(geo)
+        return zmanimCal.allZmanim.sortedBy { it.value }
     }
 }
 
@@ -46,21 +114,8 @@ data class UiState(
     val isRefreshing: Boolean = false,
     val isStale: Boolean = false,
     val error: String? = null,
-    val zmanim: List<ZmanItem> = listOf(
-        ZmanItem(id = "alos", name = "Alos", time = LocalTime.of(5, 12), enabled = true),
-        ZmanItem(id = "netz", name = "Hanetz", time = LocalTime.of(6, 37), enabled = true),
-        ZmanItem(id = "shema", name = "Sof Zman Shema", time = LocalTime.of(9, 12), enabled = true),
-        ZmanItem(id = "tefila", name = "Sof Zman Tefila", time = LocalTime.of(10, 16), enabled = true),
-        ZmanItem(id = "mincha", name = "Mincha Gedola", time = LocalTime.of(13, 22), enabled = true),
-        ZmanItem(id = "shkia", name = "Shkia", time = LocalTime.of(19, 45), enabled = true)
-    ),
+    val zmanim: List<Zman.DateBased> = emptyList(),
+    val disabledIds: Set<ZmanType> = emptySet(),
+    val timeZone: TimeZone = TimeZone.of("UTC"),
     val showingEdit: Boolean = false
 )
-
-data class ZmanItem(
-    val id: String,
-    val name: String,
-    val time: LocalTime?,
-    val enabled: Boolean
-)
-

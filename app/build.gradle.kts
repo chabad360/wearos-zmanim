@@ -39,13 +39,13 @@ android {
 dependencies {
 
     implementation(libs.play.services.wearable)
+    implementation(libs.play.services.location)
     implementation(platform(libs.compose.bom))
     implementation(libs.ui)
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
-    implementation(libs.compose.material)
+    implementation(libs.compose.material3)
     implementation(libs.compose.foundation)
-    implementation(libs.wear.tooling.preview)
     implementation(libs.activity.compose)
     implementation(libs.core.splashscreen)
     implementation(libs.tiles)
