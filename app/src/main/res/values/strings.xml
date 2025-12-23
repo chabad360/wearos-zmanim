@@ -1,10 +1,18 @@
 <resources>
     <string name="app_name">Zmanim</string>
-    <!--
-    This string is used for square devices and overridden by hello_world in
-    values-round/strings.xml for round devices.
-    -->
-    <string name="hello_world">From the Square world,\nHello, %1$s!</string>
+    <string name="location_updating">Updating location…</string>
+    <string name="location_error">Location unavailable</string>
+    <string name="refresh">Refresh</string>
+    <string name="edit_zmanim">Edit zmanim</string>
+    <string name="save">Save</string>
+    <string name="enabled">Enabled</string>
+    <string name="disabled">Disabled</string>
+    <string name="stale_location">Location may be out of date</string>
+    <string name="zmanim_header">Zmanim</string>
+    <string name="last_known_location">%1$s</string>
+    <string name="toggle_zman">Toggle zman</string>
+    <string name="zman_time">%1$s - %2$s</string>
+    <string name="zman_time_unknown">Time unknown</string>
     <string name="tile_label">Example tile</string>
     <string name="complication_label">Example complication</string>
 </resources>

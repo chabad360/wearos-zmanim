@@ -24,11 +24,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     useLibrary("wear-sdk")
     buildFeatures {
@@ -60,5 +60,10 @@ dependencies {
     debugImplementation(libs.ui.test.manifest)
     debugImplementation(libs.tiles.tooling)
 
-    implementation("io.github.kdroidfilter:kosherkotlin:2.6.1")
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.viewmodel.ktx)
+
+    implementation(libs.kosher.kotlin)
+
 }
