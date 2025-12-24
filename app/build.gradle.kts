@@ -63,6 +63,10 @@ dependencies {
     debugImplementation(libs.tiles.tooling)
     debugImplementation(libs.compose.ui.tooling)
 
+    implementation(libs.protolayout.material)
+    implementation(libs.protolayout.material3)
+    implementation(libs.protolayout.expression)
+
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.viewmodel.ktx)
