@@ -1,24 +1,24 @@
 [versions]
 agp = "8.12.0"
 kotlin = "2.2.20"
-playServicesWearable = "18.0.0"
+playServicesWearable = "19.0.0"
 playServicesLocation = "21.3.0"
-composeBom = "2025.12.00"
+composeBom = "2025.12.01"
 composeMaterial = "1.5.6"
-composeFoundation = "1.5.0"
 toolingPreview = "1.10.0"
 activityCompose = "1.12.2"
-coreSplashscreen = "1.0.1"
-tiles = "1.4.0"
-tilesMaterial = "1.4.0"
-tilesTooling = "1.4.0"
-tilesToolingPreview = "1.4.0"
-horologistComposeTools = "0.6.17"
-horologistTiles = "0.6.17"
+coreSplashscreen = "1.2.0"
+tiles = "1.5.0"
+tilesMaterial = "1.5.0"
+tilesTooling = "1.5.0"
+tilesToolingPreview = "1.5.0"
+horologistComposeTools = "0.7.15"
+horologistTiles = "0.7.15"
 watchfaceComplicationsDataSourceKtx = "1.2.1"
-lifecycle = "2.8.6"
+lifecycle = "2.10.0"
 kosherKotlin = "2.6.1"
-tooling = "1.4.1"
+tooling = "1.10.0"
+navigationCompose = "2.9.6"
 
 [libraries]
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
@@ -46,6 +46,10 @@ lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-view
 kosher-kotlin = { group = "io.github.kdroidfilter", name = "kosherkotlin", version.ref = "kosherKotlin" }
 compose-material3 = { group = "androidx.wear.compose", name = "compose-material3", version.ref = "composeMaterial" }
 compose-ui-tooling = { group = "androidx.wear.compose", name = "compose-ui-tooling", version.ref = "composeMaterial" }
+compose-navigation = { group = "androidx.wear.compose", name = "compose-navigation", version.ref = "composeMaterial" }
+navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.9.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

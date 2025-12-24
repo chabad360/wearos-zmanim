@@ -11,11 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.compose.rememberNavController
 import androidx.wear.compose.material3.AppScaffold
+import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import me.chabad360.zmanim.wearos.presentation.navigation.Navigation
 import me.chabad360.zmanim.wearos.presentation.theme.ZmanimTheme
-import me.chabad360.zmanim.wearos.presentation.ui.ZmanimScreen
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
@@ -64,9 +64,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun WearApp(viewModel: MainViewModel) {
+    val navController = rememberSwipeDismissableNavController()
     ZmanimTheme {
-        AppScaffold () {
-            ZmanimScreen(viewModel = viewModel)
+        AppScaffold {
+            Navigation(navController = navController, viewModel = viewModel)
         }
     }
 }

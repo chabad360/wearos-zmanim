@@ -3,6 +3,7 @@
     <string name="location_updating">Updating location…</string>
     <string name="location_error">Location unavailable</string>
     <string name="refresh">Refresh</string>
+    <string name="back">Back</string>
     <string name="edit_zmanim">Edit zmanim</string>
     <string name="save">Save</string>
     <string name="enabled">Enabled</string>

@@ -108,8 +108,6 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
         val is24h = DateFormat.is24HourFormat(appContext)
         val zmanim = listOf(
             ZmanDisplay("tzais", "Tzais", zmanimCal.tzais, formatTime(zmanimCal.tzais.value, geo.timeZone, is24h)),
-            ZmanDisplay("alosHashachar", "Alos Hashachar", zmanimCal.alosHashachar, formatTime(zmanimCal.alosHashachar.value, geo.timeZone, is24h)),
-            ZmanDisplay("alos72", "Alos (72 min)", zmanimCal.alos72, formatTime(zmanimCal.alos72.value, geo.timeZone, is24h)),
             ZmanDisplay("chatzos", "Chatzos", zmanimCal.chatzos, formatTime(zmanimCal.chatzos.value, geo.timeZone, is24h)),
             ZmanDisplay("sofZmanShmaGRA", "Sof Zman Krias Shema (GRA)", zmanimCal.sofZmanShmaGRA, formatTime(zmanimCal.sofZmanShmaGRA.value, geo.timeZone, is24h)),
             ZmanDisplay("sofZmanShmaMGA", "Sof Zman Krias Shema (MGA)", zmanimCal.sofZmanShmaMGA, formatTime(zmanimCal.sofZmanShmaMGA.value, geo.timeZone, is24h)),
@@ -118,10 +116,8 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
             ZmanDisplay("sofZmanTfilaGRA", "Sof Zman Tefila (GRA)", zmanimCal.sofZmanTfilaGRA, formatTime(zmanimCal.sofZmanTfilaGRA.value, geo.timeZone, is24h)),
             ZmanDisplay("sofZmanTfilaMGA", "Sof Zman Tefila (MGA)", zmanimCal.sofZmanTfilaMGA, formatTime(zmanimCal.sofZmanTfilaMGA.value, geo.timeZone, is24h)),
             ZmanDisplay("minchaGedola", "Mincha Gedola", zmanimCal.minchaGedola, formatTime(zmanimCal.minchaGedola.value, geo.timeZone, is24h)),
-            ZmanDisplay("minchaKetana", "Mincha Ketana", zmanimCal.minchaKetana, formatTime(zmanimCal.minchaKetana.value, geo.timeZone, is24h)),
-            ZmanDisplay("plagHamincha", "Plag Hamincha", zmanimCal.plagHamincha, formatTime(zmanimCal.plagHamincha.value, geo.timeZone, is24h)),
-                    ZmanDisplay("plagHamincha120MinutesZmanis", "Plag Hamincha (120 min Zmanis)", zmanimCal.plagHamincha120MinutesZmanis, formatTime(zmanimCal.plagHamincha120MinutesZmanis.value, geo.timeZone, is24h)),
-            ZmanDisplay("plagHamincha120Minutes", "Plag Hamincha (120 min)", zmanimCal.plagHamincha120Minutes, formatTime(zmanimCal.plagHamincha120Minutes.value, geo.timeZone, is24h)),
+            ZmanDisplay("alosHashachar", "Alos Hashachar", zmanimCal.alosHashachar, formatTime(zmanimCal.alosHashachar.value, geo.timeZone, is24h)),
+            ZmanDisplay("alos72", "Alos (72 min)", zmanimCal.alos72, formatTime(zmanimCal.alos72.value, geo.timeZone, is24h)),
             ZmanDisplay("alos60", "Alos (60 min)", zmanimCal.alos60, formatTime(zmanimCal.alos60.value, geo.timeZone, is24h)),
             ZmanDisplay("alos72Zmanis", "Alos (72 min Zmanis)", zmanimCal.alos72Zmanis, formatTime(zmanimCal.alos72Zmanis.value, geo.timeZone, is24h)),
             ZmanDisplay("alos96", "Alos (96 min)", zmanimCal.alos96, formatTime(zmanimCal.alos96.value, geo.timeZone, is24h)),
@@ -172,6 +168,10 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
             ZmanDisplay("minchaKetana16Point1Degrees", "Mincha Ketana (16.1°)", zmanimCal.minchaKetana16Point1Degrees, formatTime(zmanimCal.minchaKetana16Point1Degrees.value, geo.timeZone, is24h)),
             ZmanDisplay("minchaKetanaAhavatShalom", "Mincha Ketana (Ahavat Shalom)", zmanimCal.minchaKetanaAhavatShalom, formatTime(zmanimCal.minchaKetanaAhavatShalom.value, geo.timeZone, is24h)),
             ZmanDisplay("minchaKetana72Minutes", "Mincha Ketana (72 min)", zmanimCal.minchaKetana72Minutes, formatTime(zmanimCal.minchaKetana72Minutes.value, geo.timeZone, is24h)),
+            ZmanDisplay("minchaKetana", "Mincha Ketana", zmanimCal.minchaKetana, formatTime(zmanimCal.minchaKetana.value, geo.timeZone, is24h)),
+            ZmanDisplay("plagHamincha", "Plag Hamincha", zmanimCal.plagHamincha, formatTime(zmanimCal.plagHamincha.value, geo.timeZone, is24h)),
+            ZmanDisplay("plagHamincha120MinutesZmanis", "Plag Hamincha (120 min Zmanis)", zmanimCal.plagHamincha120MinutesZmanis, formatTime(zmanimCal.plagHamincha120MinutesZmanis.value, geo.timeZone, is24h)),
+            ZmanDisplay("plagHamincha120Minutes", "Plag Hamincha (120 min)", zmanimCal.plagHamincha120Minutes, formatTime(zmanimCal.plagHamincha120Minutes.value, geo.timeZone, is24h)),
             ZmanDisplay("plagHamincha60Minutes", "Plag Hamincha (60 min)", zmanimCal.plagHamincha60Minutes, formatTime(zmanimCal.plagHamincha60Minutes.value, geo.timeZone, is24h)),
             ZmanDisplay("plagHamincha72Minutes", "Plag Hamincha (72 min)", zmanimCal.plagHamincha72Minutes, formatTime(zmanimCal.plagHamincha72Minutes.value, geo.timeZone, is24h)),
             ZmanDisplay("plagHamincha90Minutes", "Plag Hamincha (90 min)", zmanimCal.plagHamincha90Minutes, formatTime(zmanimCal.plagHamincha90Minutes.value, geo.timeZone, is24h)),
@@ -203,7 +203,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
                         UsesElevation.IF_SET
                     )
                 ) {zmanimCal.sunset }, formatTime(zmanimCal.sunset, geo.timeZone, is24h)),
-    ZmanDisplay("seaLevelSunset", "Sea Level Sunset", Zman.DateBased(
+            ZmanDisplay("seaLevelSunset", "Sea Level Sunset", Zman.DateBased(
                     ZmanDefinition(
                         ZmanType.SHKIAH, ZmanAuthority.Unanimous, UsesElevation.NEVER
                     )
@@ -315,7 +315,19 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
             null
         }
     }
- }
+
+    fun toggleZmanVisiblity(zman: ZmanDisplay): Unit {
+        if (_uiState.value.disabledIds.contains(zman.key)) {
+            _uiState.value = _uiState.value.copy(disabledIds = _uiState.value.disabledIds - zman.key)
+        } else {
+            _uiState.value = _uiState.value.copy(disabledIds = _uiState.value.disabledIds + zman.key)
+        }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+}
 
  data class UiState(
      val location: String? = "Jerusalem",
@@ -329,7 +341,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
  )
 
 
- @OptIn(ExperimentalTime::class)
+@OptIn(ExperimentalTime::class)
  private fun formatTime(item: Instant?, timeZone: TimeZone, is24h: Boolean): String {
      val lt = item?.toLocalDateTime(timeZone)?.time
      return if (lt == null) {
