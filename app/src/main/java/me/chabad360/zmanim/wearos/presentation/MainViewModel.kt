@@ -34,6 +34,7 @@ import kotlin.time.Clock
 import me.chabad360.zmanim.wearos.presentation.data.DataStoreManager
 import me.chabad360.zmanim.wearos.presentation.data.PersistentState
 import me.chabad360.zmanim.wearos.presentation.data.SerializableLocation
+import me.chabad360.zmanim.wearos.tile.MainTileService
 import java.util.Locale
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -107,6 +108,9 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
                 disabledIds = _uiState.value.disabledIds
             )
             dataStore.saveState(state)
+
+            // Request tile update after persisting data
+            MainTileService.requestUpdate(appContext)
         }
     }
 
@@ -567,9 +571,10 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
 
         _uiState.value = _uiState.value.copy(disabledIds = newDisabledIds)
 
-        // Persist the change
+        // Persist the change and request tile update
         viewModelScope.launch(Dispatchers.IO) {
             dataStore.updateDisabledIds(newDisabledIds)
+            MainTileService.requestUpdate(appContext)
         }
     }
 
