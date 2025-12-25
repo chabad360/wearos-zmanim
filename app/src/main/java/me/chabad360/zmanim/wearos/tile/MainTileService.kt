@@ -4,25 +4,21 @@ import android.content.Context
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.LayoutElementBuilders
-import androidx.wear.protolayout.LayoutElementBuilders.ANGULAR_ALIGNMENT_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_LEFT
 import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_RIGHT
 import androidx.wear.protolayout.LayoutElementBuilders.Layout
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_END
-import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_START
-import androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_TOP
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ResourceBuilders.Resources
 import androidx.wear.protolayout.TimelineBuilders
+import androidx.wear.protolayout.material3.MaterialScope
 import androidx.wear.protolayout.material3.Typography
 import androidx.wear.protolayout.material3.materialScope
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import androidx.wear.protolayout.material3.primaryLayout
 import androidx.wear.protolayout.material3.text
-import androidx.wear.protolayout.material3.textEdgeButton
-import androidx.wear.protolayout.modifiers.LayoutModifier
 import androidx.wear.protolayout.modifiers.padding
 
 import androidx.wear.protolayout.types.layoutString
@@ -101,128 +97,133 @@ private fun tileLayout(
                 setHeight(expand())
                 setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
                 addContent(
-                    box {
-                        setModifiers(
-                            Modifiers {
-                                setBackground(
-                                    ModifiersBuilders.Background.Builder()
-                                        .setColor(colorScheme.secondaryContainer.prop)
-                                        .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(28F)).build())
-                                        .build()
-                                )
-                                setPadding(padding(vertical = 8f, horizontal = 16f))
-                            }
-                        )
-                        setWidth(expand())
-                        addContent(
-                            row {
-                                setWidth(expand())
-                                setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
-                                addContent( column {
-//                                    setWidth(expand())
-                                    setHorizontalAlignment(HORIZONTAL_ALIGN_LEFT)
-                                    addContent(
-                                        text(
-                                            text = "41".layoutString,
-                                            typography = Typography.DISPLAY_SMALL,
-                                            color = colorScheme.onSurface
-                                        )
-                                    )
-                                    addContent(
-                                        text(
-                                            text = "min".layoutString,
-                                            typography = Typography.TITLE_SMALL,
-                                            color = colorScheme.onSecondaryContainer
-                                        )
-                                    )
-                                } )
-                                addContent( column {
-                                    setWidth(expand())
-                                    setHorizontalAlignment(HORIZONTAL_ALIGN_RIGHT)
-                                    addContent(
-                                        text(
-                                            text = "Alos".layoutString,
-                                            typography = Typography.TITLE_LARGE,
-                                            color = colorScheme.onSecondaryContainer
-                                        )
-                                    )
-                                    addContent(
-                                        text(
-                                            text = "10:15 AM".layoutString,
-                                            typography = Typography.DISPLAY_SMALL,
-                                            color = colorScheme.onSurface
-                                        )
-                                    )
-                                } )
-                            }
-                        )
-                    }
+                    activeZman()
                 )
                 addContent(
-                    box {
-                        setModifiers(
-                            Modifiers {
-                                setPadding(padding(vertical=4f, horizontal=10f))
-                            }
-                        )
-                        setWidth(expand())
-                        addContent(
-                            box {
-                                setModifiers(
-                                    Modifiers {
-                                        setBackground(
-                                            ModifiersBuilders.Background.Builder()
-                                                .setColor(colorScheme.secondaryContainer.prop)
-                                                .setCorner(
-                                                    ModifiersBuilders.Corner.Builder().setRadius(dp(22F)).build()
-                                                )
-                                                .build()
-                                        )
-                                        setPadding(padding(vertical = 6f, horizontal = 16f))
-                                    }
-                                )
-                                setWidth(expand())
-                                addContent(
-                                    row {
-                                        setWidth(expand())
-                                        setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
-                                        addContent( column {
-                                            setHeight(expand())
-                                            addContent(text(
-                                                text = "Next:".layoutString,
-                                            ))
-                                        })
-                                        addContent(
-                                        column {
-                                            setWidth(expand())
-                                            setHorizontalAlignment(TEXT_ALIGN_END)
-                                            addContent(
-                                                text(
-                                                    text = "Neitz".layoutString,
-                                                    typography = Typography.TITLE_SMALL,
-                                                    color = colorScheme.onSecondaryContainer,
-                                                    alignment = TEXT_ALIGN_END
-                                                )
-                                            )
-                                            addContent(
-                                                text(
-                                                    text = "11:00 AM".layoutString,
-                                                    typography = Typography.LABEL_LARGE,
-                                                    alignment = TEXT_ALIGN_END,
-                                                    color = colorScheme.onSurface
-                                                )
-                                            )
-                                        }
-                                        )
-                                    }
-                                )
-                            }
-                        )
-                    }
+                    nextZman()
                 )
             } },
         )
     }
+}
+
+private fun MaterialScope.nextZman(): LayoutElementBuilders.Box = box {
+    setModifiers(
+        Modifiers {
+            setPadding(padding(vertical = 4f, horizontal = 10f))
+        }
+    )
+    setWidth(expand())
+    addContent(
+        box {
+            setModifiers(
+                Modifiers {
+                    setBackground(
+                        ModifiersBuilders.Background.Builder()
+                            .setColor(colorScheme.secondaryContainer.prop)
+                            .setCorner(
+                                ModifiersBuilders.Corner.Builder().setRadius(dp(22F)).build()
+                            )
+                            .build()
+                    )
+                    setPadding(padding(vertical = 6f, horizontal = 16f))
+                }
+            )
+            setWidth(expand())
+            addContent(
+                row {
+                    setWidth(expand())
+                    setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
+                    addContent(column {
+                        setHeight(expand())
+                        addContent(
+                            text(
+                                text = "Next:".layoutString,
+                            )
+                        )
+                    })
+                    addContent(
+                        column {
+                            setWidth(expand())
+                            setHorizontalAlignment(TEXT_ALIGN_END)
+                            addContent(
+                                text(
+                                    text = "Neitz".layoutString,
+                                    typography = Typography.TITLE_SMALL,
+                                    color = colorScheme.onSecondaryContainer,
+                                    alignment = TEXT_ALIGN_END
+                                )
+                            )
+                            addContent(
+                                text(
+                                    text = "11:00 AM".layoutString,
+                                    typography = Typography.LABEL_LARGE,
+                                    alignment = TEXT_ALIGN_END,
+                                    color = colorScheme.onSurface
+                                )
+                            )
+                        }
+                    )
+                }
+            )
+        }
+    )
+}
+
+private fun MaterialScope.activeZman(): LayoutElementBuilders.Box = box {
+    setModifiers(
+        Modifiers {
+            setBackground(
+                ModifiersBuilders.Background.Builder()
+                    .setColor(colorScheme.secondaryContainer.prop)
+                    .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(28F)).build())
+                    .build()
+            )
+            setPadding(padding(vertical = 8f, horizontal = 16f))
+        }
+    )
+    setWidth(expand())
+    addContent(
+        row {
+            setWidth(expand())
+            setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
+            addContent(column {
+                setHorizontalAlignment(HORIZONTAL_ALIGN_LEFT)
+                addContent(
+                    text(
+                        text = "41".layoutString,
+                        typography = Typography.DISPLAY_SMALL,
+                        color = colorScheme.onSurface
+                    )
+                )
+                addContent(
+                    text(
+                        text = "min".layoutString,
+                        typography = Typography.TITLE_SMALL,
+                        color = colorScheme.onSecondaryContainer
+                    )
+                )
+            })
+            addContent(column {
+                setWidth(expand())
+                setHorizontalAlignment(HORIZONTAL_ALIGN_RIGHT)
+                addContent(
+                    text(
+                        text = "Alos".layoutString,
+                        typography = Typography.TITLE_LARGE,
+                        color = colorScheme.onSecondaryContainer
+                    )
+                )
+                addContent(
+                    text(
+                        text = "10:15 AM".layoutString,
+                        typography = Typography.DISPLAY_SMALL,
+                        color = colorScheme.onSurface
+                    )
+                )
+            })
+        }
+    )
 }
 
 @Preview(device = WearDevices.SMALL_ROUND)

@@ -74,4 +74,8 @@ dependencies {
     implementation(libs.kosher.kotlin)
     implementation(libs.kotlinx.serialization.json)
 
+    implementation(libs.datastore)
+    implementation(libs.datastore.core)
+    implementation(libs.datastore.preferences)
+
 }
