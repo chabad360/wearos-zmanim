@@ -53,6 +53,9 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    // Track if cached data has been loaded
+    private var cachedDataLoaded = false
+
     init {
         // Load cached state on startup
         viewModelScope.launch {
@@ -61,6 +64,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
                 val isStale = dataStore.isStateStale(cachedState)
                 restoreFromCache(cachedState, isStale)
             }
+            cachedDataLoaded = true
         }
     }
 
@@ -117,45 +121,124 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     fun refreshLocation() {
         fun fallbackGeo(): GeoLocation = GeoLocation("Jerusalem", 31.778, 35.235, 0.0, TimeZone.of("Asia/Jerusalem"))
-        updateForGeo(fallbackGeo())
 
+        // Only set refreshing to true, don't immediately overwrite cached data with fallback
         _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
         val tz = TimeZone.currentSystemDefault()
+
+        // Use low priority for background location refresh
         fused.lastLocation
             .addOnSuccessListener { loc ->
                 if (loc != null) {
                     viewModelScope.launch(Dispatchers.Default) {
-                        updateForGeo(buildGeo(loc.latitude, loc.longitude, loc.altitude, tz))
+                        val newGeo = buildGeo(loc.latitude, loc.longitude, loc.altitude, tz)
+                        // Only update if location changed significantly (>100m) or no location exists
+                        if (shouldUpdateLocation(newGeo)) {
+                            updateForGeo(newGeo)
+                        } else {
+                            // Location hasn't changed, just clear refreshing state
+                            _uiState.value = _uiState.value.copy(isRefreshing = false)
+                            Log.d("GPS", "Location unchanged, skipping update")
+                        }
                     }
                 } else {
                     Log.w("GPS", "fresh fix")
-                    // Try a fresh fix
-                    fused.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, CancellationTokenSource().token)
+                    // Try a fresh fix with low priority
+                    fused.getCurrentLocation(Priority.PRIORITY_LOW_POWER, CancellationTokenSource().token)
                         .addOnSuccessListener { fresh ->
                             viewModelScope.launch(Dispatchers.Default) {
                                 val geo = fresh?.let { buildGeo(it.latitude, it.longitude, it.altitude, tz) }
-                                if (geo != null) {
+                                if (geo != null && shouldUpdateLocation(geo)) {
                                     updateForGeo(geo)
+                                } else if (geo != null) {
+                                    // Location unchanged
+                                    _uiState.value = _uiState.value.copy(isRefreshing = false)
+                                    Log.d("GPS", "Location unchanged, skipping update")
                                 } else {
-                                    Log.w("GPS",  "unable to get location $geo", )
-                                    updateForGeo(fallbackGeo(), error = "Unable to acquire location")
+                                    // Only fallback to Jerusalem if we have no cached location
+                                    if (_uiState.value.location == null) {
+                                        Log.w("GPS", "Unable to get location, falling back to Jerusalem")
+                                        updateForGeo(fallbackGeo(), error = "Unable to acquire location")
+                                    } else {
+                                        // Keep existing cached location
+                                        _uiState.value = _uiState.value.copy(
+                                            isRefreshing = false,
+                                            error = "Unable to update location, using cached data"
+                                        )
+                                        Log.w("GPS", "Unable to get location, keeping cached data")
+                                    }
                                 }
                             }
                         }
                         .addOnFailureListener { err ->
                             viewModelScope.launch(Dispatchers.Default) {
-                                Log.w("GPS",  err)
-                                updateForGeo(fallbackGeo(), error = err.message ?: "Unable to refresh location")
+                                Log.w("GPS", err)
+                                // Only fallback to Jerusalem if we have no cached location
+                                if (_uiState.value.location == null) {
+                                    updateForGeo(fallbackGeo(), error = err.message ?: "Unable to refresh location")
+                                } else {
+                                    // Keep existing cached location
+                                    _uiState.value = _uiState.value.copy(
+                                        isRefreshing = false,
+                                        error = "Unable to update location, using cached data"
+                                    )
+                                }
                             }
                         }
                 }
             }
             .addOnFailureListener { err ->
                 viewModelScope.launch(Dispatchers.Default) {
-                    Log.w("GPS",  err)
-                    updateForGeo(fallbackGeo(), error = err.message ?: "Unable to refresh location")
+                    Log.w("GPS", err)
+                    // Only fallback to Jerusalem if we have no cached location
+                    if (_uiState.value.location == null) {
+                        updateForGeo(fallbackGeo(), error = err.message ?: "Unable to refresh location")
+                    } else {
+                        // Keep existing cached location
+                        _uiState.value = _uiState.value.copy(
+                            isRefreshing = false,
+                            error = "Unable to update location, using cached data"
+                        )
+                    }
                 }
             }
+    }
+
+    /**
+     * Check if location has changed significantly (>100m) to warrant recalculation
+     */
+    private fun shouldUpdateLocation(newGeo: GeoLocation): Boolean {
+        val currentState = _uiState.value
+
+        // Always update if we don't have a location yet
+        if (currentState.location == null) {
+            return true
+        }
+
+        // Get current location from state flow
+        val cachedState = runCatching {
+            kotlinx.coroutines.runBlocking {
+                dataStore.stateFlow.first()
+            }
+        }.getOrNull() ?: return true
+
+        val oldLat = cachedState.location.latitude
+        val oldLon = cachedState.location.longitude
+
+        // Calculate distance using Haversine formula (approximate)
+        val R = 6371000.0 // Earth radius in meters
+        val dLat = Math.toRadians(newGeo.latitude - oldLat)
+        val dLon = Math.toRadians(newGeo.longitude - oldLon)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(oldLat)) * Math.cos(Math.toRadians(newGeo.latitude)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        val distance = R * c
+
+        Log.d("GPS", "Location distance: ${distance}m")
+
+        // Only update if moved more than 100m
+        return distance > 100
     }
 
     private fun updateForGeo(geo: GeoLocation, error: String? = null) {

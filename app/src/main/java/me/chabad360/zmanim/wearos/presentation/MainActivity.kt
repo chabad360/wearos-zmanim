@@ -11,9 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import me.chabad360.zmanim.wearos.presentation.navigation.Navigation
 import me.chabad360.zmanim.wearos.presentation.theme.ZmanimTheme
 
@@ -28,7 +30,12 @@ class MainActivity : ComponentActivity() {
         val granted = grants[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             grants[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (granted) {
-            viewModel.refreshLocation()
+            // Launch background location refresh
+            lifecycleScope.launch {
+                // Small delay to ensure UI is ready
+                delay(500)
+                viewModel.refreshLocation()
+            }
         }
     }
 
@@ -50,7 +57,12 @@ class MainActivity : ComponentActivity() {
         val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
         if (fine == PermissionChecker.PERMISSION_GRANTED || coarse == PermissionChecker.PERMISSION_GRANTED) {
-            viewModel.refreshLocation()
+            // Launch background location refresh, don't block startup
+            lifecycleScope.launch {
+                // Small delay to ensure UI is ready
+                delay(500)
+                viewModel.refreshLocation()
+            }
         } else {
             permissionLauncher.launch(
                 arrayOf(
