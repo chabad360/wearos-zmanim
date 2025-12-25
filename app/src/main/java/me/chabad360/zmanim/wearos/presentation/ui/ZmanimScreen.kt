@@ -74,19 +74,19 @@ fun ZmanimScreen(viewModel: MainViewModel, navController: NavController) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    val visibleZmanim by remember(state.zmanim, state.disabledIds) {
-        derivedStateOf { state.zmanim.filter { it.zman.value != null && it.key !in state.disabledIds } }
+    val visibleZmanim by remember(state.zmanDisplays, state.disabledIds) {
+        derivedStateOf { state.zmanDisplays.filter { it.fromEpoch != null && it.key !in state.disabledIds } }
     }
 
     val beforeNowZmanim by remember(visibleZmanim) {
         derivedStateOf {
-            visibleZmanim.filter { (it.zman.value?.compareTo(Clock.System.now()) ?: -1) < 0 }
+            visibleZmanim.filter { (it.fromEpoch?:0) < Clock.System.now().epochSeconds }
         }
     }
 
     val afterNowZmanim by remember(visibleZmanim) {
         derivedStateOf {
-            visibleZmanim.filter { (it.zman.value?.compareTo(Clock.System.now()) ?: -1) > 0 }
+            visibleZmanim.filter { (it.fromEpoch?:0) > Clock.System.now().epochSeconds }
         }
     }
 

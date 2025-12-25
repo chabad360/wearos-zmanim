@@ -24,7 +24,7 @@ fun Navigation(
         }
         composable("zman/{zmanKey}") { backStackEntry ->
             val zmanKey = backStackEntry.arguments?.getString("zmanKey")
-            val zman = viewModel.uiState.collectAsState().value.zmanim.find { it.key == zmanKey }
+            val zman = viewModel.uiState.collectAsState().value.zmanDisplays.find { it.key == zmanKey }
             if (zman != null) {
                 ZmanDetailScreen(viewModel = viewModel, zman = zman, navController = navController)
             }

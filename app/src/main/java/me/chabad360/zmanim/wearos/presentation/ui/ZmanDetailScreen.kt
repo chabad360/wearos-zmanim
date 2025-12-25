@@ -45,13 +45,18 @@ fun ZmanDetailScreen(
     val isDisabled by remember(state.disabledIds) {
         derivedStateOf { state.disabledIds.contains(zman.key) }
     }
+
+    val actualZman by remember(zman.key) {
+        derivedStateOf { state.zmanim[zman.key]!!.invoke() }
+    }
+
     val zmanDescription by remember(zman.key) {
-        derivedStateOf { formatter.formatLongDescription(zman.zman.definition).split("Supporting authorities")[0] }
+        derivedStateOf { formatter.formatLongDescription(actualZman.definition).split("Supporting authorities")[0] }
     }
     val supportingAuthorities by remember(zman.key) {
         derivedStateOf {
             "Supporting Authorities: \n⋅ ${
-                zman.zman.definition.supportingAuthorities.joinToString(
+                actualZman.definition.supportingAuthorities.joinToString(
                     separator = "\n⋅ "
                 ) { it.name }
             }"
@@ -105,7 +110,7 @@ fun ZmanDetailScreen(
                     )
                 }
             }
-            if (zman.zman.definition.supportingAuthorities.isNotEmpty()) {
+            if (actualZman.definition.supportingAuthorities.isNotEmpty()) {
                 item {
                     Text(
                         text = supportingAuthorities,
