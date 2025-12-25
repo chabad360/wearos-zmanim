@@ -22,9 +22,6 @@ import androidx.wear.protolayout.material3.text
 import androidx.wear.protolayout.modifiers.padding
 
 import androidx.wear.protolayout.types.layoutString
-import androidx.wear.tiles.tooling.preview.Preview
-import androidx.wear.tiles.tooling.preview.TilePreviewData
-import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
 import kotlinx.coroutines.flow.first
@@ -290,7 +287,7 @@ private fun MaterialScope.nextZman(zman: ZmanDisplay): LayoutElementBuilders.Box
                     addContent(
                         column {
                             setWidth(expand())
-                            setHorizontalAlignment(TEXT_ALIGN_END)
+                            setHorizontalAlignment(HORIZONTAL_ALIGN_RIGHT)
                             addContent(
                                 text(
                                     text = zman.name.layoutString,
@@ -371,44 +368,44 @@ private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.D
     )
 }
 
-@Preview(device = WearDevices.SMALL_ROUND)
-@Preview(device = WearDevices.LARGE_ROUND)
-fun tilePreview(context: Context) = TilePreviewData(::resources) { requestParams ->
-    // Create mock data for preview
-    val mockData = TileData(
-        location = "Jerusalem",
-        currentZman = ZmanDisplay(
-            key = "alos",
-            name = "Alos Hashachar",
-            fromEpoch = System.currentTimeMillis() / 1000 + 2460, // 41 minutes from now
-            timeZone = kotlinx.datetime.TimeZone.UTC,
-            uses24h = false
-        ),
-        nextZman = ZmanDisplay(
-            key = "sunrise",
-            name = "Sunrise",
-            fromEpoch = System.currentTimeMillis() / 1000 + 5400, // 1.5 hours from now
-            timeZone = kotlinx.datetime.TimeZone.UTC,
-            uses24h = false
-        ),
-        timeUntilCurrent = 2460.seconds
-    )
-
-    TileBuilders.Tile.Builder()
-        .setResourcesVersion(RESOURCES_VERSION)
-        .setTileTimeline(
-            TimelineBuilders.Timeline.Builder()
-                .addTimelineEntry(
-                    TimelineBuilders.TimelineEntry.Builder()
-                        .setLayout(
-                            Layout.Builder()
-                                .setRoot(tileLayout(requestParams, context, mockData))
-                                .build()
-                        )
-                        .build()
-                )
-                .build()
-        )
-        .build()
-}
+//@Preview(device = WearDevices.SMALL_ROUND)
+//@Preview(device = WearDevices.LARGE_ROUND)
+//fun tilePreview(context: Context) = TilePreviewData(::resources) { requestParams ->
+//    // Create mock data for preview
+//    val mockData = TileData(
+//        location = "Jerusalem",
+//        currentZman = ZmanDisplay(
+//            key = "alos",
+//            name = "Alos Hashachar",
+//            fromEpoch = System.currentTimeMillis() / 1000 + 2460, // 41 minutes from now
+//            timeZone = kotlinx.datetime.TimeZone.UTC,
+//            uses24h = false
+//        ),
+//        nextZman = ZmanDisplay(
+//            key = "sunrise",
+//            name = "Sunrise",
+//            fromEpoch = System.currentTimeMillis() / 1000 + 5400, // 1.5 hours from now
+//            timeZone = kotlinx.datetime.TimeZone.UTC,
+//            uses24h = false
+//        ),
+//        timeUntilCurrent = 2460.seconds
+//    )
+//
+//    TileBuilders.Tile.Builder()
+//        .setResourcesVersion(RESOURCES_VERSION)
+//        .setTileTimeline(
+//            TimelineBuilders.Timeline.Builder()
+//                .addTimelineEntry(
+//                    TimelineBuilders.TimelineEntry.Builder()
+//                        .setLayout(
+//                            Layout.Builder()
+//                                .setRoot(tileLayout(requestParams, context, mockData))
+//                                .build()
+//                        )
+//                        .build()
+//                )
+//                .build()
+//        )
+//        .build()
+//}
 

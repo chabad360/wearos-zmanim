@@ -22,6 +22,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -31,6 +32,11 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+//    signingConfigs {
+//        defaultConfig {
+//
+//        }
+//    }
     useLibrary("wear-sdk")
     buildFeatures {
         compose = true
@@ -78,5 +84,8 @@ dependencies {
     implementation(libs.datastore)
     implementation(libs.datastore.core)
     implementation(libs.datastore.preferences)
+
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.kotlinx.coroutines.play.services)
 
 }

@@ -5,6 +5,7 @@ The application previously had the following issues:
 1. **Slow startup**: App waited for GPS update to complete before showing data
 2. **Fallback to Jerusalem on GPS failure**: If GPS failed or was rate-limited, it always fell back to Jerusalem instead of using cached data
 3. **Lost cached data**: Even when valid cached location/zmanim data existed, it was immediately overwritten with Jerusalem fallback
+4. **Stale zmanim times**: When opening the app on a new day, it showed yesterday's zmanim times instead of recalculating for today
 
 ## Solution
 
@@ -22,6 +23,10 @@ The application previously had the following issues:
   - Prevents unnecessary recalculations when user hasn't moved
 - **Cached data loading**: Added `cachedDataLoaded` flag to track when cached data is loaded
 - **Improved error handling**: Better error messages distinguish between "no location available" and "using cached data"
+- **Automatic stale data refresh**: When cached data is from a different day (stale):
+  - Automatically recalculates zmanim for today using the cached location
+  - Persists the updated zmanim immediately
+  - User sees today's times, not yesterday's
 
 #### 2. MainActivity.kt
 - **Async location refresh**: Added `lifecycleScope.launch` with 500ms delay before calling `refreshLocation()`
@@ -32,11 +37,12 @@ The application previously had the following issues:
 
 #### On App Launch (with cached data):
 1. App starts, ViewModel `init` block loads cached state from DataStore
-2. UI shows immediately with cached data (zmanim, location, etc.)
-3. After 500ms delay, background GPS check starts
-4. If location changed >100m, update silently in background
-5. If location unchanged, just clear the refreshing state
-6. If GPS fails, keep showing cached data with error indicator
+2. **If data is stale (from yesterday)**: Automatically recalculates zmanim for today using cached location
+3. UI shows immediately with current zmanim (either cached or freshly calculated)
+4. After 500ms delay, background GPS check starts
+5. If location changed >100m, update silently in background
+6. If location unchanged, just clear the refreshing state
+7. If GPS fails, keep showing current data with error indicator
 
 #### On App Launch (no cached data):
 1. App starts, ViewModel finds no cached state
@@ -56,6 +62,7 @@ The application previously had the following issues:
 3. **Battery efficient**: Uses low-power GPS mode for background refresh
 4. **Reduced API calls**: Only recalculates when location actually changed (>100m)
 5. **Better UX**: Users always see something useful, not a loading screen
+6. **Always current**: When opening the app on a new day, zmanim are automatically recalculated for today
 
 ### Configuration
 - **Distance threshold**: 100 meters (can be adjusted in `shouldUpdateLocation()`)
