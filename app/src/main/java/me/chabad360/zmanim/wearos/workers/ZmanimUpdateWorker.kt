@@ -9,6 +9,9 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationToken
+import com.google.android.gms.tasks.CancellationTokenSource
 import io.github.kdroidfilter.kosherkotlin.ComplexZmanimCalendar
 import io.github.kdroidfilter.kosherkotlin.util.GeoLocation
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +23,12 @@ import me.chabad360.zmanim.wearos.presentation.data.DataStoreManager
 import me.chabad360.zmanim.wearos.presentation.data.PersistentState
 import me.chabad360.zmanim.wearos.presentation.data.SerializableLocation
 import me.chabad360.zmanim.wearos.tile.MainTileService
+import me.chabad360.zmanim.wearos.util.LocationHelper
 import me.chabad360.zmanim.wearos.util.ZmanimCalculator
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -54,14 +62,18 @@ class ZmanimUpdateWorker(
             val isStale = dataStore.isStateStale(currentState)
 
             // Check if we have location permissions
-            val hasLocationPermission = ContextCompat.checkSelfPermission(
+            val hasLocationPermission = (ContextCompat.checkSelfPermission(
                 applicationContext,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(
                 applicationContext,
                 Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
+            ) == PackageManager.PERMISSION_GRANTED) &&
+                    ContextCompat.checkSelfPermission(
+                        applicationContext,
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
 
             var shouldUpdate = false
             var newLocation: SerializableLocation? = null
@@ -69,9 +81,11 @@ class ZmanimUpdateWorker(
             // Try to get current location if we have permission
             if (hasLocationPermission) {
                 try {
-                    val location = fused.lastLocation.await()
+                    val location = fused.getCurrentLocation(Priority.PRIORITY_LOW_POWER,
+                        null
+                    ).await()
                     if (location != null) {
-                        val distance = calculateDistance(
+                        val distance = LocationHelper.calculateDistance(
                             currentState.location.latitude,
                             currentState.location.longitude,
                             location.latitude,
@@ -87,7 +101,7 @@ class ZmanimUpdateWorker(
                                     ?: "${location.latitude},${location.longitude}",
                                 latitude = location.latitude,
                                 longitude = location.longitude,
-                                altitude = location.altitude.toDouble(),
+                                altitude = location.altitude,
                                 timezoneId = TimeZone.currentSystemDefault().id
                             )
                             shouldUpdate = true
@@ -139,23 +153,6 @@ class ZmanimUpdateWorker(
             Log.e(TAG, "Failed to update zmanim", e)
             Result.retry()
         }
-    }
-
-    /**
-     * Calculate distance between two coordinates using Haversine formula
-     */
-    private fun calculateDistance(
-        lat1: Double, lon1: Double,
-        lat2: Double, lon2: Double
-    ): Double {
-        val R = 6371000.0 // Earth radius in meters
-        val dLat = Math.toRadians(lat2 - lat1)
-        val dLon = Math.toRadians(lon2 - lon1)
-        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2)
-        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        return R * c
     }
 
     /**

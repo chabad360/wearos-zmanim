@@ -1,15 +1,18 @@
 package me.chabad360.zmanim.wearos.presentation.ui
 
 import android.widget.Toast
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.MaterialTheme

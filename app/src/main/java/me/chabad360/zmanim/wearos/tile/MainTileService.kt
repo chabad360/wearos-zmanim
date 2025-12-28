@@ -3,28 +3,29 @@ package me.chabad360.zmanim.wearos.tile
 import android.content.Context
 import android.util.Log
 import androidx.wear.protolayout.*
-import androidx.wear.protolayout.DimensionBuilders.dp
-import androidx.wear.protolayout.DimensionBuilders.expand
-import androidx.wear.protolayout.DimensionBuilders.sp
+import androidx.wear.protolayout.DimensionBuilders.*
 import androidx.wear.protolayout.LayoutElementBuilders.*
 import androidx.wear.protolayout.ResourceBuilders.Resources
-import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat.FloatFormatter
+import androidx.wear.protolayout.expression.DynamicBuilders
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInstant
-import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
-import androidx.wear.protolayout.expression.DynamicDataBuilders
-import androidx.wear.protolayout.expression.DynamicDataPair
-import androidx.wear.protolayout.expression.stringAppDataKey
+import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInt32.IntFormatter
 import androidx.wear.protolayout.material3.*
+import androidx.wear.protolayout.material3.PrimaryLayoutMargins.Companion.MIN_PRIMARY_LAYOUT_MARGIN
 import androidx.wear.protolayout.modifiers.padding
 import androidx.wear.protolayout.types.layoutString
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
+import androidx.wear.tiles.tooling.preview.Preview
+import androidx.wear.tiles.tooling.preview.TilePreviewData
+import androidx.wear.tooling.preview.devices.WearDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.TimeZone
 import me.chabad360.zmanim.wearos.presentation.ZmanDisplay
 import me.chabad360.zmanim.wearos.presentation.data.DataStoreManager
 import java.time.Instant
+import java.time.ZoneId
 import kotlin.time.Duration.Companion.seconds
 
 
@@ -41,10 +42,10 @@ private data class TileData(
     val timeUntilCurrent: kotlin.time.Duration
 )
 
-fun column(builder: LayoutElementBuilders.Column.Builder.() -> Unit) = LayoutElementBuilders.Column.Builder().apply(builder).build()
-fun row(builder: LayoutElementBuilders.Row.Builder.() -> Unit) = LayoutElementBuilders.Row.Builder().apply(builder).build()
+fun column(builder: Column.Builder.() -> Unit) = Column.Builder().apply(builder).build()
+fun row(builder: Row.Builder.() -> Unit) = Row.Builder().apply(builder).build()
 
-fun box(builder: LayoutElementBuilders.Box.Builder.() -> Unit) = LayoutElementBuilders.Box.Builder().apply(builder).build()
+fun box(builder: Box.Builder.() -> Unit) = Box.Builder().apply(builder).build()
 fun Modifiers(builder: ModifiersBuilders.Modifiers.Builder.() -> Unit) = ModifiersBuilders.Modifiers.Builder().apply(builder).build()
 
 /**
@@ -153,7 +154,7 @@ private suspend fun tile(
         // If there's a current zman, add a timeline entry for when it passes.
         // Important: TimeInterval end must be strictly > start.
         if (tileData.currentZman?.fromEpoch != null) {
-            val startMillis = tileData.currentZman.fromEpoch!! * 1000
+            val startMillis = tileData.currentZman.fromEpoch * 1000
             val endMillis = startMillis + 86400000L // +24 hours
             if (endMillis > startMillis) {
                 timelineBuilder.addTimelineEntry(
@@ -263,7 +264,7 @@ private fun tileLayout(
     requestParams: RequestBuilders.TileRequest,
     context: Context,
     tileData: TileData
-): LayoutElementBuilders.LayoutElement {
+): LayoutElement {
     return materialScope(
         context = context,
         deviceConfiguration = requestParams.deviceConfiguration,
@@ -271,6 +272,7 @@ private fun tileLayout(
     ) {
         primaryLayout(
             titleSlot = { text(text = tileData.location.layoutString) },
+            margins = MIN_PRIMARY_LAYOUT_MARGIN,
             mainSlot = {
                 column {
                     setWidth(expand())
@@ -302,22 +304,16 @@ private fun tileLayout(
     }
 }
 
-private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.Duration): LayoutElementBuilders.Box {
+private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.Duration): Box {
     // Create dynamic instant for the target time
     val targetInstant = Instant.ofEpochSecond(zman.fromEpoch!!)
     val dynamicTargetInstant = DynamicInstant.withSecondsPrecision(targetInstant)
 
     // Calculate dynamic duration between now and target time
-    val dynamicDuration = dynamicTargetInstant.durationUntil(DynamicInstant.platformTimeWithSecondsPrecision())
+    val dynamicDuration = DynamicInstant.platformTimeWithSecondsPrecision().durationUntil(dynamicTargetInstant)
 
     // Get total seconds as DynamicInt32
     val totalSeconds = dynamicDuration.toIntSeconds()
-
-    // Calculate display value and unit dynamically using nested conditions
-    // If < 60 seconds: show seconds
-    // If < 3600 seconds (1 hour): show minutes
-    // If < 86400 seconds (24 hours): show hours (with decimal)
-    // Else: show days
 
 
     return box {
@@ -329,7 +325,7 @@ private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.D
                         .setCorner(ModifiersBuilders.Corner.Builder().setRadius(dp(28F)).build())
                         .build()
                 )
-                setPadding(padding(vertical = 8f, horizontal = 16f))
+                setPadding(padding(vertical = 12f, horizontal = 16f))
             }
         )
         setWidth(expand())
@@ -338,20 +334,22 @@ private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.D
                 setWidth(expand())
                 setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
                 addContent(column {
+//                    setWidth(expand())
                     setHorizontalAlignment(HORIZONTAL_ALIGN_LEFT)
                     addContent(
                         Text.Builder()
                             .setText(
                                 TypeBuilders.StringProp.Builder("--")
-                                    .setDynamicValue(DynamicString.onCondition(totalSeconds.lt(60))
+                                    .setDynamicValue(
+                                        DynamicBuilders.DynamicString.onCondition(totalSeconds.lt(60))
                                         .use(totalSeconds.format()) // seconds
                                         .elseUse(
-                                            DynamicString.onCondition(totalSeconds.lt(3600))
+                                            DynamicBuilders.DynamicString.onCondition(totalSeconds.lt(3600))
                                                 .use(totalSeconds.div(60).format()) // minutes
                                                 .elseUse(
-                                                    DynamicString.onCondition(totalSeconds.lt(86400))
+                                                    DynamicBuilders.DynamicString.onCondition(totalSeconds.lt(86400))
                                                         .use(totalSeconds.div(60).asFloat().div(60f).format(
-                                                            FloatFormatter.Builder().setMaxFractionDigits(1).setMinIntegerDigits(1).build())) // hours with decimal
+                                                            DynamicBuilders.DynamicFloat.FloatFormatter.Builder().setMaxFractionDigits(1).setMinIntegerDigits(1).build())) // hours with decimal
                                                         .elseUse(totalSeconds.div(86400).format()) // days
                                                 )
                                         ))
@@ -359,7 +357,7 @@ private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.D
                             )
                             .setFontStyle(
                                 FontStyle.Builder()
-                                    .setSize(sp(36f)) // DISPLAY_SMALL size
+                                    .setSize(sp(24f))
                                     .setColor(colorScheme.onSurface.prop)
                                     .build()
                             )
@@ -369,15 +367,16 @@ private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.D
                         Text.Builder()
                             .setText(
                                 TypeBuilders.StringProp.Builder("min")
-                                    .setDynamicValue(DynamicString.onCondition(totalSeconds.lt(60))
-                                        .use(DynamicString.constant("sec"))
+                                    .setDynamicValue(
+                                        DynamicBuilders.DynamicString.onCondition(totalSeconds.lt(60))
+                                        .use(DynamicBuilders.DynamicString.constant("sec"))
                                         .elseUse(
-                                            DynamicString.onCondition(totalSeconds.lt(3600))
-                                                .use(DynamicString.constant("min"))
+                                            DynamicBuilders.DynamicString.onCondition(totalSeconds.lt(3600))
+                                                .use(DynamicBuilders.DynamicString.constant("min"))
                                                 .elseUse(
-                                                    DynamicString.onCondition(totalSeconds.lt(86400))
-                                                        .use(DynamicString.constant("hrs"))
-                                                        .elseUse(DynamicString.constant("days"))
+                                                    DynamicBuilders.DynamicString.onCondition(totalSeconds.lt(86400))
+                                                        .use(DynamicBuilders.DynamicString.constant("hrs"))
+                                                        .elseUse(DynamicBuilders.DynamicString.constant("days"))
                                                 )
                                         ))
                                     .build()
@@ -414,10 +413,10 @@ private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.D
     }
 }
 
-private fun MaterialScope.nextZman(zman: ZmanDisplay): LayoutElementBuilders.Box = box {
+private fun MaterialScope.nextZman(zman: ZmanDisplay): Box = box {
     setModifiers(
         Modifiers {
-            setPadding(padding(vertical = 4f, horizontal = 10f))
+            setPadding(padding(vertical = 4f, horizontal = 16f))
         }
     )
     setWidth(expand())
@@ -433,7 +432,7 @@ private fun MaterialScope.nextZman(zman: ZmanDisplay): LayoutElementBuilders.Box
                             )
                             .build()
                     )
-                    setPadding(padding(vertical = 6f, horizontal = 16f))
+                    setPadding(padding(vertical = 10f, horizontal = 16f))
                 }
             )
             setWidth(expand())
@@ -476,43 +475,44 @@ private fun MaterialScope.nextZman(zman: ZmanDisplay): LayoutElementBuilders.Box
         }
     )
 }
-//@Preview(device = WearDevices.SMALL_ROUND)
-//@Preview(device = WearDevices.LARGE_ROUND)
-//fun tilePreview(context: Context) = TilePreviewData(::resources) { requestParams ->
-//    // Create mock data for preview
-//    val mockData = TileData(
-//        location = "Jerusalem",
-//        currentZman = ZmanDisplay(
-//            key = "alos",
-//            name = "Alos Hashachar",
-//            fromEpoch = System.currentTimeMillis() / 1000 + 2460, // 41 minutes from now
-//            timeZone = kotlinx.datetime.TimeZone.UTC,
-//            uses24h = false
-//        ),
-//        nextZman = ZmanDisplay(
-//            key = "sunrise",
-//            name = "Sunrise",
-//            fromEpoch = System.currentTimeMillis() / 1000 + 5400, // 1.5 hours from now
-//            timeZone = kotlinx.datetime.TimeZone.UTC,
-//            uses24h = false
-//        ),
-//        timeUntilCurrent = 2460.seconds
-//    )
-//
-//    TileBuilders.Tile.Builder()
-//        .setResourcesVersion(RESOURCES_VERSION)
-//        .setTileTimeline(
-//            TimelineBuilders.Timeline.Builder()
-//                .addTimelineEntry(
-//                    TimelineBuilders.TimelineEntry.Builder()
-//                        .setLayout(
-//                            Layout.Builder()
-//                                .setRoot(tileLayout(requestParams, context, mockData))
-//                                .build()
-//                        )
-//                        .build()
-//                )
-//                .build()
-//        )
-//        .build()
-//}
+
+@Preview(device = WearDevices.SMALL_ROUND)
+@Preview(device = WearDevices.LARGE_ROUND)
+fun tilePreview(context: Context) = TilePreviewData(::resources) { requestParams ->
+    // Create mock data for preview
+    val mockData = TileData(
+        location = "Jerusalem",
+        currentZman = ZmanDisplay(
+            key = "alos",
+            name = "Alos Hashachar",
+            fromEpoch = System.currentTimeMillis() / 1000 + 2460, // 41 minutes from now
+            timeZone = TimeZone.UTC,
+            uses24h = false
+        ),
+        nextZman = ZmanDisplay(
+            key = "sunrise",
+            name = "Sunrise",
+            fromEpoch = System.currentTimeMillis() / 1000 + 5400, // 1.5 hours from now
+            timeZone = TimeZone.UTC,
+            uses24h = false
+        ),
+        timeUntilCurrent = 2460.seconds
+    )
+
+    TileBuilders.Tile.Builder()
+        .setResourcesVersion(RESOURCES_VERSION)
+        .setTileTimeline(
+            TimelineBuilders.Timeline.Builder()
+                .addTimelineEntry(
+                    TimelineBuilders.TimelineEntry.Builder()
+                        .setLayout(
+                            Layout.Builder()
+                                .setRoot(tileLayout(requestParams, context, mockData))
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        )
+        .build()
+}

@@ -25,8 +25,7 @@ class ZmanimApplication : Application() {
     private fun scheduleZmanimUpdates() {
         val constraints = Constraints.Builder()
             // Only run when device is not in battery saver mode
-//            .setRequiresBatteryNotLow(true)
-            .setRequiresDeviceIdle(true)
+            .setRequiresBatteryNotLow(true)
             .build()
 
         val workRequest = PeriodicWorkRequestBuilder<ZmanimUpdateWorker>(
