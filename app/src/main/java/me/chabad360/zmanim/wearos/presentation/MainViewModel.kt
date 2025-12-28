@@ -476,6 +476,40 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
+
+    /**
+     * Check if background location permission should be requested
+     * Returns true if foreground permission is granted but background is not
+     */
+    fun shouldRequestBackgroundLocation(context: Context): Boolean {
+        val hasForegroundPermission = (
+            context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED ||
+            context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+        )
+
+        val hasBackgroundPermission = context.checkSelfPermission(
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        // Only show if we have foreground but not background
+        return hasForegroundPermission && !hasBackgroundPermission
+    }
+
+    /**
+     * Show the background location permission prompt
+     */
+    fun showBackgroundLocationPrompt() {
+        _uiState.value = _uiState.value.copy(showBackgroundLocationPrompt = true)
+    }
+
+    /**
+     * Dismiss the background location permission prompt
+     */
+    fun dismissBackgroundLocationPrompt() {
+        _uiState.value = _uiState.value.copy(showBackgroundLocationPrompt = false)
+    }
 }
 
 data class UiState(
@@ -487,7 +521,8 @@ data class UiState(
     val zmanDisplays: List<ZmanDisplay> = emptyList(),
     val disabledIds: Set<String> = emptySet(),
     val timeZone: TimeZone = TimeZone.of("UTC"),
-    val showingEdit: Boolean = false
+    val showingEdit: Boolean = false,
+    val showBackgroundLocationPrompt: Boolean = false
 )
 
 

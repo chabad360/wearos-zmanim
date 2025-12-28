@@ -39,8 +39,30 @@ class MainActivity : ComponentActivity() {
                 // Small delay to ensure UI is ready
                 delay(500)
                 viewModel.refreshLocation()
+
+                // Check if we should prompt for background location
+                if (viewModel.shouldRequestBackgroundLocation(applicationContext)) {
+                    delay(1000) // Wait a bit before showing prompt
+                    viewModel.showBackgroundLocationPrompt()
+                }
             }
         }
+    }
+
+    private val backgroundLocationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            // Background location permission granted
+            lifecycleScope.launch {
+                viewModel.refreshLocation()
+            }
+        }
+        viewModel.dismissBackgroundLocationPrompt()
+    }
+
+    fun requestBackgroundLocationPermission() {
+        backgroundLocationPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,7 +78,7 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            WearApp(viewModel, scrollToZmanKey)
+            WearApp(viewModel, scrollToZmanKey, this)
         }
     }
 
@@ -80,6 +102,12 @@ class MainActivity : ComponentActivity() {
                 // Small delay to ensure UI is ready
                 delay(500)
                 viewModel.refreshLocation()
+
+                // Check if we should prompt for background location
+                if (viewModel.shouldRequestBackgroundLocation(applicationContext)) {
+                    delay(1000) // Wait a bit before showing prompt
+                    viewModel.showBackgroundLocationPrompt()
+                }
             }
         } else {
             permissionLauncher.launch(
@@ -93,11 +121,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun WearApp(viewModel: MainViewModel, scrollToZmanKey: androidx.compose.runtime.MutableState<String?>) {
+fun WearApp(viewModel: MainViewModel, scrollToZmanKey: androidx.compose.runtime.MutableState<String?>, activity: MainActivity) {
     val navController = rememberSwipeDismissableNavController()
     ZmanimTheme {
         AppScaffold {
-            Navigation(navController = navController, viewModel = viewModel, scrollToZmanKey = scrollToZmanKey)
+            Navigation(navController = navController, viewModel = viewModel, scrollToZmanKey = scrollToZmanKey, activity = activity)
         }
     }
 }

@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -37,6 +38,7 @@ import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.material3.AlertDialogDefaults
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.FilledIconButton
 import androidx.wear.compose.material3.FilledTonalIconButton
@@ -60,7 +62,8 @@ import kotlin.time.ExperimentalTime
 fun ZmanimScreen(
     viewModel: MainViewModel,
     navController: NavController,
-    scrollToZmanKey: androidx.compose.runtime.MutableState<String?>? = null
+    scrollToZmanKey: androidx.compose.runtime.MutableState<String?>? = null,
+    activity: me.chabad360.zmanim.wearos.presentation.MainActivity? = null
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -124,6 +127,18 @@ fun ZmanimScreen(
                 scrollToZmanKey.value = null
             }
         }
+    }
+
+    // Show background location permission dialog
+    if (state.showBackgroundLocationPrompt && activity != null) {
+        BackgroundLocationDialog(
+            onAllow = {
+                activity.requestBackgroundLocationPermission()
+            },
+            onDeny = {
+                viewModel.dismissBackgroundLocationPrompt()
+            }
+        )
     }
 
     ScreenScaffold (
@@ -245,3 +260,38 @@ private fun ZmanRow(item: ZmanDisplay, onClick: () -> Unit) {
     }
 }
 
+@Composable
+private fun BackgroundLocationDialog(
+    onAllow: () -> Unit,
+    onDeny: () -> Unit
+) {
+    androidx.wear.compose.material3.AlertDialog(
+        visible = true,
+        onDismissRequest = onDeny,
+        icon = {
+            Icon(
+                painter = painterResource(R.drawable.location_on_24px),
+                contentDescription = null
+            )
+        },
+        title = {
+            Text(
+                text = "Background Location",
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Text(
+                text = "Allow background location access to automatically update your location throughout the day?",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            AlertDialogDefaults.ConfirmButton(onClick = onAllow)
+        },
+        dismissButton = {
+            AlertDialogDefaults.DismissButton(onClick = onDeny)
+        }
+    )
+}

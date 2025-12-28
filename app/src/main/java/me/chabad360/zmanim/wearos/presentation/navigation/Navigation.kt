@@ -14,14 +14,15 @@ import androidx.compose.runtime.collectAsState
 fun Navigation(
     navController: NavHostController,
     viewModel: MainViewModel,
-    scrollToZmanKey: androidx.compose.runtime.MutableState<String?>
+    scrollToZmanKey: androidx.compose.runtime.MutableState<String?>,
+    activity: me.chabad360.zmanim.wearos.presentation.MainActivity
 ) {
     SwipeDismissableNavHost(
         navController = navController,
         startDestination = "zmanim"
     ) {
         composable("zmanim") {
-            ZmanimScreen(viewModel = viewModel, navController = navController, scrollToZmanKey = scrollToZmanKey)
+            ZmanimScreen(viewModel = viewModel, navController = navController, scrollToZmanKey = scrollToZmanKey, activity = activity)
         }
         composable("zman/{zmanKey}") { backStackEntry ->
             val zmanKey = backStackEntry.arguments?.getString("zmanKey")
