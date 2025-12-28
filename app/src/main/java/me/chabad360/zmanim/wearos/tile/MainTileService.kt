@@ -1,14 +1,15 @@
 package me.chabad360.zmanim.wearos.tile
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.wear.protolayout.*
+import androidx.wear.protolayout.ActionBuilders.*
 import androidx.wear.protolayout.DimensionBuilders.*
 import androidx.wear.protolayout.LayoutElementBuilders.*
 import androidx.wear.protolayout.ResourceBuilders.Resources
 import androidx.wear.protolayout.expression.DynamicBuilders
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInstant
-import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInt32.IntFormatter
 import androidx.wear.protolayout.material3.*
 import androidx.wear.protolayout.material3.PrimaryLayoutMargins.Companion.MIN_PRIMARY_LAYOUT_MARGIN
 import androidx.wear.protolayout.modifiers.padding
@@ -22,10 +23,10 @@ import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
+import me.chabad360.zmanim.wearos.presentation.MainActivity
 import me.chabad360.zmanim.wearos.presentation.ZmanDisplay
 import me.chabad360.zmanim.wearos.presentation.data.DataStoreManager
 import java.time.Instant
-import java.time.ZoneId
 import kotlin.time.Duration.Companion.seconds
 
 
@@ -281,12 +282,12 @@ private fun tileLayout(
 
                     // Show current upcoming zman
                     if (tileData.currentZman != null) {
-                        addContent(activeZman(tileData.currentZman, tileData.timeUntilCurrent))
+                        addContent(activeZman(context, tileData.currentZman, tileData.timeUntilCurrent))
                     }
 
                     // Show next zman
                     if (tileData.nextZman != null) {
-                        addContent(nextZman(tileData.nextZman))
+                        addContent(nextZman(context, tileData.nextZman))
                     }
 
                     // Show placeholder if no data
@@ -304,7 +305,7 @@ private fun tileLayout(
     }
 }
 
-private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.Duration): Box {
+private fun MaterialScope.activeZman(context: Context, zman: ZmanDisplay, timeUntil: kotlin.time.Duration): Box {
     // Create dynamic instant for the target time
     val targetInstant = Instant.ofEpochSecond(zman.fromEpoch!!)
     val dynamicTargetInstant = DynamicInstant.withSecondsPrecision(targetInstant)
@@ -314,7 +315,6 @@ private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.D
 
     // Get total seconds as DynamicInt32
     val totalSeconds = dynamicDuration.toIntSeconds()
-
 
     return box {
         setModifiers(
@@ -326,6 +326,26 @@ private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.D
                         .build()
                 )
                 setPadding(padding(vertical = 12f, horizontal = 16f))
+                setClickable(
+                    ModifiersBuilders.Clickable.Builder()
+                        .setOnClick(
+                            LaunchAction.Builder()
+                                .setAndroidActivity(
+                                    AndroidActivity.Builder()
+                                        .setClassName(MainActivity::class.java.name)
+                                        .setPackageName(context.packageName)
+                                        .addKeyToExtraMapping(
+                                            "zmanKey",
+                                            AndroidStringExtra.Builder()
+                                                .setValue(zman.key)
+                                                .build()
+                                        )
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
+                )
             }
         )
         setWidth(expand())
@@ -413,7 +433,7 @@ private fun MaterialScope.activeZman(zman: ZmanDisplay, timeUntil: kotlin.time.D
     }
 }
 
-private fun MaterialScope.nextZman(zman: ZmanDisplay): Box = box {
+private fun MaterialScope.nextZman(context: Context, zman: ZmanDisplay): Box = box {
     setModifiers(
         Modifiers {
             setPadding(padding(vertical = 4f, horizontal = 16f))
@@ -433,6 +453,26 @@ private fun MaterialScope.nextZman(zman: ZmanDisplay): Box = box {
                             .build()
                     )
                     setPadding(padding(vertical = 10f, horizontal = 16f))
+                    setClickable(
+                        ModifiersBuilders.Clickable.Builder()
+                            .setOnClick(
+                                LaunchAction.Builder()
+                                    .setAndroidActivity(
+                                        AndroidActivity.Builder()
+                                            .setClassName(MainActivity::class.java.name)
+                                            .setPackageName(context.packageName)
+                                            .addKeyToExtraMapping(
+                                                "zmanKey",
+                                                AndroidStringExtra.Builder()
+                                                    .setValue(zman.key)
+                                                    .build()
+                                            )
+                                            .build()
+                                    )
+                                    .build()
+                            )
+                            .build()
+                    )
                 }
             )
             setWidth(expand())

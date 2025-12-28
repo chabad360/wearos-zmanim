@@ -1,5 +1,6 @@
 package me.chabad360.zmanim.wearos.presentation.ui
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.foundation.border
@@ -49,7 +50,11 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalWearFoundationApi::class, ExperimentalTime::class)
 @Composable
-fun ZmanimScreen(viewModel: MainViewModel, navController: NavController) {
+fun ZmanimScreen(
+    viewModel: MainViewModel,
+    navController: NavController,
+    scrollToZmanKey: androidx.compose.runtime.MutableState<String?>? = null
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -57,17 +62,19 @@ fun ZmanimScreen(viewModel: MainViewModel, navController: NavController) {
         derivedStateOf { state.zmanDisplays.filter { it.fromEpoch != null && it.key !in state.disabledIds } }
     }
 
-    val beforeNowZmanim by remember(visibleZmanim) {
-        derivedStateOf {
-            visibleZmanim.filter { (it.fromEpoch?:0) < Clock.System.now().epochSeconds }
-        }
-    }
+//    val beforeNowZmanim by remember(visibleZmanim, ) {
+//        derivedStateOf {
+//            visibleZmanim.filter { (it.fromEpoch?:0) < Clock.System.now().epochSeconds }
+//        }
+//    }
+    val beforeNowZmanim = visibleZmanim.filter { (it.fromEpoch?:0) < Clock.System.now().epochSeconds }
 
-    val afterNowZmanim by remember(visibleZmanim) {
-        derivedStateOf {
-            visibleZmanim.filter { (it.fromEpoch?:0) > Clock.System.now().epochSeconds }
-        }
-    }
+//    val afterNowZmanim by remember(visibleZmanim) {
+//        derivedStateOf {
+//            visibleZmanim.filter { (it.fromEpoch?:0) > Clock.System.now().epochSeconds }
+//        }
+//    }
+    val afterNowZmanim = visibleZmanim.filter { (it.fromEpoch?:0) > Clock.System.now().epochSeconds }
 
     LaunchedEffect(state.error) {
         state.error?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
@@ -76,6 +83,34 @@ fun ZmanimScreen(viewModel: MainViewModel, navController: NavController) {
 
     val listState = rememberScalingLazyListState()
     val time = TimeTextDefaults.rememberTimeSource(timeFormat())
+
+    // Handle scrolling to specific zman from tile click
+    if (visibleZmanim.isNotEmpty()) {
+        LaunchedEffect(scrollToZmanKey?.value) {
+            scrollToZmanKey?.value?.let { key ->
+                // Find the index of the zman in the list
+                val beforeIndex = beforeNowZmanim.indexOfFirst { it.key == key }
+                val afterIndex = afterNowZmanim.indexOfFirst { it.key == key }
+
+                // Calculate the actual index in the ScalingLazyColumn
+                // Items: LocationHeader (0) + beforeNowZmanim + current time divider + afterNowZmanim + spacer + edit button
+                val targetIndex = when {
+                    beforeIndex >= 0 -> 1 + beforeIndex // LocationHeader + beforeNowZmanim items
+                    afterIndex >= 0 -> 1 + beforeNowZmanim.size + 1 + afterIndex // LocationHeader + beforeNowZmanim + divider + afterNowZmanim items
+                    else -> -1
+                }
+
+                Log.d("ZmanimScreen", "Target index: $targetIndex")
+
+                if (targetIndex >= 0) {
+                    listState.animateScrollToItem(targetIndex)
+                }
+
+                // Clear the scroll target
+                scrollToZmanKey.value = null
+            }
+        }
+    }
 
     ScreenScaffold (
         scrollState = listState,

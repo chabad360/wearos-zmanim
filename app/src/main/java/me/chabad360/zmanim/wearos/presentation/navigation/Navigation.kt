@@ -13,14 +13,15 @@ import androidx.compose.runtime.collectAsState
 @Composable
 fun Navigation(
     navController: NavHostController,
-    viewModel: MainViewModel
+    viewModel: MainViewModel,
+    scrollToZmanKey: androidx.compose.runtime.MutableState<String?>
 ) {
     SwipeDismissableNavHost(
         navController = navController,
         startDestination = "zmanim"
     ) {
         composable("zmanim") {
-            ZmanimScreen(viewModel = viewModel, navController = navController)
+            ZmanimScreen(viewModel = viewModel, navController = navController, scrollToZmanKey = scrollToZmanKey)
         }
         composable("zman/{zmanKey}") { backStackEntry ->
             val zmanKey = backStackEntry.arguments?.getString("zmanKey")

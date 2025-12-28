@@ -1,6 +1,7 @@
 package me.chabad360.zmanim.wearos.presentation
 
 import android.Manifest
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -23,6 +25,8 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
         MainViewModelFactory(applicationContext)
     }
+
+    private val scrollToZmanKey = mutableStateOf<String?>(null)
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -48,8 +52,22 @@ class MainActivity : ComponentActivity() {
 
         ensureLocationPermission()
 
+        // Handle intent from tile
+        handleIntent(intent)
+
         setContent {
-            WearApp(viewModel)
+            WearApp(viewModel, scrollToZmanKey)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        intent.getStringExtra("zmanKey")?.let { key ->
+            scrollToZmanKey.value = key
         }
     }
 
@@ -75,11 +93,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun WearApp(viewModel: MainViewModel) {
+fun WearApp(viewModel: MainViewModel, scrollToZmanKey: androidx.compose.runtime.MutableState<String?>) {
     val navController = rememberSwipeDismissableNavController()
     ZmanimTheme {
         AppScaffold {
-            Navigation(navController = navController, viewModel = viewModel)
+            Navigation(navController = navController, viewModel = viewModel, scrollToZmanKey = scrollToZmanKey)
         }
     }
 }

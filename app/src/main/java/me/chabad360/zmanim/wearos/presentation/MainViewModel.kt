@@ -236,9 +236,9 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
          )
 
          // Persist the new state
-         if (error == null) {
+//         if (error == null) {
              persistState(geo, zmanDisplays)
-         }
+//         }
     }
 
     @OptIn(ExperimentalTime::class)
