@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -182,7 +183,7 @@ fun ZmanimScreen(
             item { LocationHeader(state.location) }
             items(
                 items = beforeNowZmanim,
-                key = { it.key }
+//                key = { it.key }
             ) { item ->
                 ZmanRow(item = item, onClick = { navController.navigate("zman/${item.key}") })
             }
@@ -204,27 +205,27 @@ fun ZmanimScreen(
             }
             items(
                 items = afterNowZmanim,
-                key = { it.key }
+//                key = { it.key }
             ) { item ->
                 ZmanRow(item = item, onClick = { navController.navigate("zman/${item.key}") })
             }
-            item { Spacer(modifier = Modifier.height(8.dp)) }
-            item {
-                IconButton(
-//                    onClick = viewModel::toggleEdit,
-                    onClick = {},
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-//                    Text(text = stringResource(id = R.string.edit_zmanim))
-                    Icon(
-                        painter = painterResource(R.drawable.edit_24px),
-                        contentDescription = stringResource(id = R.string.edit_zmanim)
-                    )
-                }
-            }
+//            item { Spacer(modifier = Modifier.height(8.dp)) }
+//            item {
+//                IconButton(
+////                    onClick = viewModel::toggleEdit,
+//                    onClick = {},
+//                    colors = IconButtonDefaults.iconButtonColors(
+//                        containerColor = MaterialTheme.colorScheme.primary,
+//                        contentColor = MaterialTheme.colorScheme.onPrimary
+//                    )
+//                ) {
+////                    Text(text = stringResource(id = R.string.edit_zmanim))
+//                    Icon(
+//                        painter = painterResource(R.drawable.edit_24px),
+//                        contentDescription = stringResource(id = R.string.edit_zmanim)
+//                    )
+//                }
+//            }
         }
     }
 }
@@ -232,9 +233,10 @@ fun ZmanimScreen(
 @Composable
 private fun LocationHeader(location: String?) {
     Text(
-        modifier = Modifier.padding(bottom = 16.dp),
+        modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
         text = location ?: stringResource(id = R.string.location_error),
         style = MaterialTheme.typography.titleLarge,
+        textAlign = TextAlign.Center
     )
 }
 

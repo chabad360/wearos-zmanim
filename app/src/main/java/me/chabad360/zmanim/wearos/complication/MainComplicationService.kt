@@ -1,5 +1,7 @@
 package me.chabad360.zmanim.wearos.complication
 
+import android.app.PendingIntent
+import android.content.Intent
 import android.text.format.DateFormat
 import android.util.Log
 import androidx.wear.watchface.complications.data.ComplicationData
@@ -9,6 +11,7 @@ import androidx.wear.watchface.complications.data.RangedValueComplicationData
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import kotlinx.coroutines.flow.first
+import me.chabad360.zmanim.wearos.presentation.MainActivity
 import me.chabad360.zmanim.wearos.presentation.data.DataStoreManager
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -30,6 +33,7 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
         }
         // Preview shows a zman 10 minutes away
         return createRangedValueComplication(
+            zmanKey = "minchaGedola",
             zmanName = "Mincha",
             zmanTime = if (DateFormat.is24HourFormat(applicationContext)) "17:21" else "5:21",
             timeUntilZman = 600.seconds
@@ -62,6 +66,7 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
             val timeUntilZman = (nextZman.fromEpoch!! - now).seconds
 
             createRangedValueComplication(
+                zmanKey = nextZman.key,
                 zmanName = nextZman.name,
                 zmanTime = nextZman.timeText,
                 timeUntilZman = timeUntilZman
@@ -76,6 +81,7 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
      * Create a RANGED_VALUE complication showing the zman with countdown
      */
     private fun createRangedValueComplication(
+        zmanKey: String,
         zmanName: String,
         zmanTime: String,
         timeUntilZman: kotlin.time.Duration
@@ -95,6 +101,18 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
             Triple(0f, 1f, false)
         }
 
+        // Create tap action to open the app and scroll to this zman
+        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            putExtra("zmanKey", zmanKey)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            zmanKey.hashCode(), // Use zmanKey hash as request code to ensure uniqueness
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         return RangedValueComplicationData.Builder(
             value = value,
             min = 0f,
@@ -106,6 +124,7 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
         )
             .setText(PlainComplicationText.Builder(timeText).build())
             .setTitle(PlainComplicationText.Builder(zmanName).build())
+            .setTapAction(pendingIntent)
             .build()
     }
 

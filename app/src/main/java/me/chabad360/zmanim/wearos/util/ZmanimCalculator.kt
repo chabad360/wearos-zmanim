@@ -4,8 +4,12 @@ import android.content.Context
 import android.text.format.DateFormat
 import io.github.kdroidfilter.kosherkotlin.ComplexZmanimCalendar
 import io.github.kdroidfilter.kosherkotlin.util.GeoLocation
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
 import me.chabad360.zmanim.wearos.presentation.ZmanDisplay
+import java.time.temporal.ChronoUnit
+import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
 
 /**
@@ -33,7 +37,12 @@ object ZmanimCalculator {
             TimeZone.of(timezoneId)
         )
         val cal = ComplexZmanimCalendar(geo)
-        return computeZmanim(cal, context)
+        val today =  computeZmanim(cal, context)
+        val tomorrowCal = ComplexZmanimCalendar(geo).apply {
+            jewishCalendar.setDate(jewishCalendar.gregorianLocalDate.plus(1, DateTimeUnit.DAY))
+        }
+        val tomorrow = computeZmanim(tomorrowCal, context)
+        return today + tomorrow
     }
 
     /**
