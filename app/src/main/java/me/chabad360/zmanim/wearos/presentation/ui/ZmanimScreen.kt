@@ -2,19 +2,19 @@ package me.chabad360.zmanim.wearos.presentation.ui
 
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberOverscrollEffect
+import androidx.compose.foundation.shape.CornerSize
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
@@ -22,12 +22,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -36,12 +38,17 @@ import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.EdgeButton
+import androidx.wear.compose.material3.FilledIconButton
+import androidx.wear.compose.material3.FilledTonalIconButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconButton
 import androidx.wear.compose.material3.IconButtonDefaults
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.TimeTextDefaults
 import androidx.wear.compose.material3.TimeTextDefaults.timeFormat
+import androidx.wear.compose.material3.touchTargetAwareSize
+import androidx.wear.protolayout.DimensionBuilders.dp
+import kotlinx.coroutines.launch
 import me.chabad360.zmanim.wearos.R
 import me.chabad360.zmanim.wearos.presentation.MainViewModel
 import me.chabad360.zmanim.wearos.presentation.ZmanDisplay
@@ -57,24 +64,31 @@ fun ZmanimScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val visibleZmanim by remember(state.zmanDisplays, state.disabledIds) {
         derivedStateOf { state.zmanDisplays.filter { it.fromEpoch != null && it.key !in state.disabledIds } }
     }
 
-//    val beforeNowZmanim by remember(visibleZmanim, ) {
-//        derivedStateOf {
-//            visibleZmanim.filter { (it.fromEpoch?:0) < Clock.System.now().epochSeconds }
-//        }
-//    }
-    val beforeNowZmanim = visibleZmanim.filter { (it.fromEpoch?:0) < Clock.System.now().epochSeconds }
+    var currentTimeTick by remember { mutableStateOf(Clock.System.now().epochSeconds) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(1000) // Update every second
+            currentTimeTick = Clock.System.now().epochSeconds
+        }
+    }
 
-//    val afterNowZmanim by remember(visibleZmanim) {
-//        derivedStateOf {
-//            visibleZmanim.filter { (it.fromEpoch?:0) > Clock.System.now().epochSeconds }
-//        }
-//    }
-    val afterNowZmanim = visibleZmanim.filter { (it.fromEpoch?:0) > Clock.System.now().epochSeconds }
+    val beforeNowZmanim by remember(visibleZmanim, currentTimeTick) {
+        derivedStateOf {
+            visibleZmanim.filter { (it.fromEpoch ?: 0) < currentTimeTick }
+        }
+    }
+
+    val afterNowZmanim by remember(visibleZmanim, currentTimeTick) {
+        derivedStateOf {
+            visibleZmanim.filter { (it.fromEpoch ?: 0) >= currentTimeTick }
+        }
+    }
 
     LaunchedEffect(state.error) {
         state.error?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
@@ -95,8 +109,8 @@ fun ZmanimScreen(
                 // Calculate the actual index in the ScalingLazyColumn
                 // Items: LocationHeader (0) + beforeNowZmanim + current time divider + afterNowZmanim + spacer + edit button
                 val targetIndex = when {
-                    beforeIndex >= 0 -> 1 + beforeIndex // LocationHeader + beforeNowZmanim items
-                    afterIndex >= 0 -> 1 + beforeNowZmanim.size + 1 + afterIndex // LocationHeader + beforeNowZmanim + divider + afterNowZmanim items
+                    beforeIndex >= 0 -> 2 + beforeIndex // LocationHeader + beforeNowZmanim items
+                    afterIndex >= 0 -> 2 + beforeNowZmanim.size + 1 + afterIndex // LocationHeader + beforeNowZmanim + divider + afterNowZmanim items
                     else -> -1
                 }
 
@@ -114,7 +128,7 @@ fun ZmanimScreen(
 
     ScreenScaffold (
         scrollState = listState,
-        contentPadding = PaddingValues(top = 40.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
+        contentPadding = PaddingValues(top = 32.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
         edgeButton = {
             EdgeButton(
                 onClick = viewModel::refreshLocation,
@@ -134,6 +148,22 @@ fun ZmanimScreen(
             state = listState,
             contentPadding = contentPadding
             ) {
+            item {
+                FilledIconButton(
+                    onClick = {
+                        scope.launch { listState.animateScrollToItem(beforeNowZmanim.size + 3) }
+                    },
+                    modifier = Modifier
+                        .touchTargetAwareSize(IconButtonDefaults.ExtraSmallButtonSize),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.clock_arrow_down_24px),
+                        contentDescription = stringResource(id = R.string.scroll_to_next_zman),
+                        modifier = Modifier
+                            .size(IconButtonDefaults.iconSizeFor(IconButtonDefaults.ExtraSmallButtonSize))
+                    )
+                }
+            }
             item { LocationHeader(state.location) }
             items(
                 items = beforeNowZmanim,
@@ -143,13 +173,13 @@ fun ZmanimScreen(
             }
             item {
                 Box(
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .border(
-                            Dp.Hairline,
-                            MaterialTheme.colorScheme.primary,
-                            shape = MaterialTheme.shapes.small,
-                        )
+//                    modifier = Modifier
+//                        .padding(vertical = 8.dp)
+//                        .border(
+//                            Dp.Hairline,
+//                            MaterialTheme.colorScheme.primary,
+//                            shape = MaterialTheme.shapes.small,
+//                        )
                 ) {
                     Text(
                         modifier = Modifier.padding(4.dp),
@@ -187,7 +217,7 @@ fun ZmanimScreen(
 @Composable
 private fun LocationHeader(location: String?) {
     Text(
-        modifier = Modifier.padding(vertical = 16.dp),
+        modifier = Modifier.padding(bottom = 16.dp),
         text = location ?: stringResource(id = R.string.location_error),
         style = MaterialTheme.typography.titleLarge,
     )

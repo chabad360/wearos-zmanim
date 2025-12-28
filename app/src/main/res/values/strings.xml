@@ -14,6 +14,7 @@
     <string name="toggle_zman">Toggle zman</string>
     <string name="zman_time">%1$s - %2$s</string>
     <string name="zman_time_unknown">Time unknown</string>
-    <string name="tile_label">Upcoming Zmanim</string>
+    <string name="tile_label">Zmanim</string>
     <string name="complication_label">Upcoming Zman</string>
+    <string name="scroll_to_next_zman">Scroll to next zman</string>
 </resources>
