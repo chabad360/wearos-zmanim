@@ -440,9 +440,11 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
             val results = geocoder.getFromLocation(lat, lon, 1)
             val addr = results?.firstOrNull()
             if (addr != null) {
-                val city = addr.locality ?: addr.subAdminArea
                 when {
-                    city != null  -> city
+                    addr.locality != null  -> addr.locality
+                    addr.featureName != null -> addr.featureName
+                    addr.subAdminArea != null -> addr.subAdminArea
+                    addr.adminArea != null -> addr.adminArea
                     else -> null
                 }
             } else null
@@ -452,7 +454,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
         }
     }
 
-    fun toggleZmanVisiblity(zman: ZmanDisplay): Unit {
+    fun toggleZmanVisiblity(zman: ZmanDisplay) {
         val newDisabledIds = if (_uiState.value.disabledIds.contains(zman.key)) {
             _uiState.value.disabledIds - zman.key
         } else {
