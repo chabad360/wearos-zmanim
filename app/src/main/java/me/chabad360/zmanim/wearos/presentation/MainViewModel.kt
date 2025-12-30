@@ -91,7 +91,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
 
         if (isStale) {
             // Data is from a different day, recalculate zmanim for today
-            val zmanDisplays = ZmanimCalculator.computeZmanim(cal, appContext)
+            val zmanDisplays = ZmanimCalculator.calculateZmanim(appContext, cached.location.latitude, cached.location.longitude, cached.location.altitude, cached.location.name, cached.location.timezoneId)
             _uiState.value = _uiState.value.copy(
                 location = cached.location.name,
                 zmanim = zmanim,
@@ -143,7 +143,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
     }
 
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
-    fun refreshLocation() {
+    fun refreshLocation(force: Boolean = false) {
         fun fallbackGeo(): GeoLocation = GeoLocation("Jerusalem", 31.778, 35.235, 0.0, TimeZone.of("Asia/Jerusalem"))
 
         // Only set refreshing to true, don't immediately overwrite cached data with fallback
@@ -153,7 +153,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
             .addOnSuccessListener { fresh ->
                 viewModelScope.launch(Dispatchers.Default) {
                     val geo = fresh?.let { buildGeo(it.latitude, it.longitude, it.altitude, tz) }
-                    if (geo != null && shouldUpdateLocation(geo)) {
+                    if (geo != null && (shouldUpdateLocation(geo) || force) ) {
                         updateForGeo(geo)
                     } else if (geo != null) {
                         // Location unchanged
@@ -223,7 +223,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
     private fun updateForGeo(geo: GeoLocation, error: String? = null) {
         val cal = ComplexZmanimCalendar(geo)
         val zmanim = zmanimMap(cal)
-        val zmanDisplays = ZmanimCalculator.computeZmanim(cal, appContext)
+        val zmanDisplays = ZmanimCalculator.calculateZmanim(appContext, geo.latitude, geo.longitude, geo.elevation, geo.locationName, geo.timeZone.id)
          _uiState.value = _uiState.value.copy(
              isRefreshing = false,
              location = geo.locationName,

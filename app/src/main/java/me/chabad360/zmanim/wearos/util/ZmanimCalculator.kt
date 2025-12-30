@@ -7,6 +7,8 @@ import io.github.kdroidfilter.kosherkotlin.util.GeoLocation
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
+import kotlinx.datetime.toJavaLocalDateTime
+import kotlinx.datetime.toKotlinLocalDateTime
 import me.chabad360.zmanim.wearos.presentation.ZmanDisplay
 import java.time.temporal.ChronoUnit
 import kotlin.time.Duration.Companion.days
@@ -39,6 +41,7 @@ object ZmanimCalculator {
         val cal = ComplexZmanimCalendar(geo)
         val today =  computeZmanim(cal, context)
         val tomorrowCal = ComplexZmanimCalendar(geo).apply {
+            localDateTime = localDateTime.toJavaLocalDateTime().plusDays(1).toKotlinLocalDateTime()
             jewishCalendar.setDate(jewishCalendar.gregorianLocalDate.plus(1, DateTimeUnit.DAY))
         }
         val tomorrow = computeZmanim(tomorrowCal, context)

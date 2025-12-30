@@ -52,9 +52,16 @@ import androidx.wear.compose.material3.TimeTextDefaults.timeFormat
 import androidx.wear.compose.material3.touchTargetAwareSize
 import androidx.wear.protolayout.DimensionBuilders.dp
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.atTime
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import me.chabad360.zmanim.wearos.R
 import me.chabad360.zmanim.wearos.presentation.MainViewModel
 import me.chabad360.zmanim.wearos.presentation.ZmanDisplay
+import java.util.Date
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -70,8 +77,19 @@ fun ZmanimScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    // 00:00 tomorrow, used to filter the actual zmanim to be just from today.
+    val tomorrowEpoch = remember {
+        Clock.System.now()
+            .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+            .date
+            .plus(1, DateTimeUnit.DAY)
+            .atTime(0, 0)
+            .toInstant(kotlinx.datetime.TimeZone.currentSystemDefault())
+            .epochSeconds
+    }
+
     val visibleZmanim by remember(state.zmanDisplays, state.disabledIds) {
-        derivedStateOf { state.zmanDisplays.filter { it.fromEpoch != null && it.key !in state.disabledIds } }
+        derivedStateOf { state.zmanDisplays.filter { it.fromEpoch != null && it.key !in state.disabledIds && it.fromEpoch <= tomorrowEpoch } }
     }
 
     var currentTimeTick by remember { mutableStateOf(Clock.System.now().epochSeconds) }
@@ -147,7 +165,7 @@ fun ZmanimScreen(
         contentPadding = PaddingValues(top = 32.dp, bottom = 0.dp, start = 16.dp, end = 16.dp),
         edgeButton = {
             EdgeButton(
-                onClick = viewModel::refreshLocation,
+                onClick = { viewModel.refreshLocation(true) },
                 modifier =  Modifier.scrollable(
                     listState,
                 orientation = Orientation.Vertical,
