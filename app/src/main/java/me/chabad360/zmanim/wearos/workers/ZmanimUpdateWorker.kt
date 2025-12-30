@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
+import me.chabad360.zmanim.wearos.complication.MainComplicationService
 import me.chabad360.zmanim.wearos.presentation.data.DataStoreManager
 import me.chabad360.zmanim.wearos.presentation.data.PersistentState
 import me.chabad360.zmanim.wearos.presentation.data.SerializableLocation
@@ -132,6 +133,7 @@ class ZmanimUpdateWorker(
 
                 // Request tile update
                 MainTileService.requestUpdate(applicationContext)
+                MainComplicationService.requestUpdate(applicationContext)
 
                 Log.d(TAG, "Zmanim updated successfully")
             } else {

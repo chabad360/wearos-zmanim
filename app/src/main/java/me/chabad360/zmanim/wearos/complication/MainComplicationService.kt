@@ -12,11 +12,16 @@ import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.data.RangedValueComplicationData
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
+import androidx.wear.watchface.complications.datasource.ComplicationDataTimeline
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
+import androidx.wear.watchface.complications.datasource.SuspendingTimelineComplicationDataSourceService
+import androidx.wear.watchface.complications.datasource.TimeInterval
+import androidx.wear.watchface.complications.datasource.TimelineEntry
 import kotlinx.coroutines.flow.first
 import me.chabad360.zmanim.wearos.presentation.MainActivity
 import me.chabad360.zmanim.wearos.presentation.data.DataStoreManager
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -31,7 +36,7 @@ private val COUNTDOWN_THRESHOLD = 15
  * - The time of the next zman in the center
  * - A progress bar that counts down when less than 15 minutes remain
  */
-class MainComplicationService : SuspendingComplicationDataSourceService() {
+class MainComplicationService : SuspendingTimelineComplicationDataSourceService() {
 
     override fun getPreviewData(type: ComplicationType): ComplicationData? {
         if (type != ComplicationType.RANGED_VALUE) {
@@ -46,7 +51,8 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
         )
     }
 
-    override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData {
+    @OptIn(ExperimentalTime::class)
+    override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationDataTimeline {
         return try {
             // Load persisted zmanim data
             val dataStore = DataStoreManager(applicationContext)
@@ -54,7 +60,7 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
 
             if (persistentState == null || dataStore.isStateStale(persistentState)) {
                 Log.w(TAG, "No data or stale data available for complication")
-                return createNoDataComplication()
+                return ComplicationDataTimeline(createNoDataComplication(), emptyList())
             }
 
             // Filter out disabled zmanim and get next upcoming one
@@ -66,18 +72,26 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
 
             if (nextZman == null) {
                 Log.w(TAG, "No upcoming zmanim found")
-                return createNoDataComplication()
+                return ComplicationDataTimeline(createNoDataComplication(), emptyList())
             }
 
-            createRangedValueComplication(
-                zmanKey = nextZman.key,
-                zmanName = nextZman.name,
-                zmanTime = nextZman.timeText,
-                zmanEpoch = nextZman.fromEpoch
-            )
+            return ComplicationDataTimeline(createNoDataComplication(), listOf(
+                TimelineEntry(
+                    validity = TimeInterval(
+                        start = Clock.System.now().toJavaInstant(),
+                        end = Instant.fromEpochSeconds(nextZman.fromEpoch!!).toJavaInstant()
+                    ),
+                    complicationData = createRangedValueComplication(
+                        zmanKey = nextZman.key,
+                        zmanName = nextZman.name,
+                        zmanTime = nextZman.timeText,
+                        zmanEpoch = nextZman.fromEpoch
+                    )
+                )
+            ))
         } catch (e: Exception) {
             Log.e(TAG, "Error creating complication", e)
-            createNoDataComplication()
+            ComplicationDataTimeline(createNoDataComplication(), emptyList())
         }
     }
 
