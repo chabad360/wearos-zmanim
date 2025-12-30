@@ -1,7 +1,6 @@
 package me.chabad360.zmanim.wearos.tile
 
 import android.content.Context
-import android.content.Intent
 import android.util.Log
 import androidx.wear.protolayout.*
 import androidx.wear.protolayout.ActionBuilders.*

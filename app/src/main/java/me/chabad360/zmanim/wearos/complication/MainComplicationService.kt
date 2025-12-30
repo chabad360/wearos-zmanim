@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.first
 import me.chabad360.zmanim.wearos.presentation.MainActivity
 import me.chabad360.zmanim.wearos.presentation.data.DataStoreManager
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlin.time.toJavaInstant

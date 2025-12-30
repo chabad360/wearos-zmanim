@@ -25,19 +25,8 @@ object ZmanimCalculator {
     @OptIn(ExperimentalTime::class)
     fun calculateZmanim(
         context: Context,
-        latitude: Double,
-        longitude: Double,
-        altitude: Double,
-        locationName: String,
-        timezoneId: String
+        geo: GeoLocation
     ): List<ZmanDisplay> {
-        val geo = GeoLocation(
-            locationName,
-            latitude,
-            longitude,
-            altitude,
-            TimeZone.of(timezoneId)
-        )
         val cal = ComplexZmanimCalendar(geo)
         val today =  computeZmanim(cal, context)
         val tomorrowCal = ComplexZmanimCalendar(geo).apply {

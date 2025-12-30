@@ -2,9 +2,7 @@ package me.chabad360.zmanim.wearos.presentation
 
 import android.Manifest
 import android.content.Context
-import android.location.Geocoder
 import android.util.Log
-import android.text.format.DateFormat
 import androidx.annotation.RequiresPermission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -26,7 +24,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
@@ -34,15 +31,10 @@ import kotlin.time.Clock
 import me.chabad360.zmanim.wearos.presentation.data.DataStoreManager
 import me.chabad360.zmanim.wearos.presentation.data.PersistentState
 import me.chabad360.zmanim.wearos.presentation.data.SerializableLocation
-import me.chabad360.zmanim.wearos.presentation.theme.ZmanimTheme
 import me.chabad360.zmanim.wearos.tile.MainTileService
 import me.chabad360.zmanim.wearos.util.LocationHelper
+import me.chabad360.zmanim.wearos.util.LocationHelper.resolvePlaceName
 import me.chabad360.zmanim.wearos.util.ZmanimCalculator
-import java.util.Locale
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -79,19 +71,13 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
      * Restore UI state from cached persistent state
      */
     private fun restoreFromCache(cached: PersistentState, isStale: Boolean) {
-        val geo = GeoLocation(
-            cached.location.name,
-            cached.location.latitude,
-            cached.location.longitude,
-            cached.location.altitude,
-            TimeZone.of(cached.location.timezoneId)
-        )
+        val geo = cached.location.toGeoLocation()
         val cal = ComplexZmanimCalendar(geo)
         val zmanim = zmanimMap(cal)
 
         if (isStale) {
             // Data is from a different day, recalculate zmanim for today
-            val zmanDisplays = ZmanimCalculator.calculateZmanim(appContext, cached.location.latitude, cached.location.longitude, cached.location.altitude, cached.location.name, cached.location.timezoneId)
+            val zmanDisplays = ZmanimCalculator.calculateZmanim(appContext, geo)
             _uiState.value = _uiState.value.copy(
                 location = cached.location.name,
                 zmanim = zmanim,
@@ -125,13 +111,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             val state = PersistentState(
                 lastComputedMillis = Clock.System.now().toEpochMilliseconds(),
-                location = SerializableLocation(
-                    name = geo.locationName ?: "Unknown",
-                    latitude = geo.latitude,
-                    longitude = geo.longitude,
-                    altitude = geo.elevation,
-                    timezoneId = geo.timeZone.id
-                ),
+                location = SerializableLocation(geo),
                 zmanim = zmanDisplays,  // ZmanDisplay is already serializable, use directly
                 disabledIds = _uiState.value.disabledIds
             )
@@ -223,7 +203,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
     private fun updateForGeo(geo: GeoLocation, error: String? = null) {
         val cal = ComplexZmanimCalendar(geo)
         val zmanim = zmanimMap(cal)
-        val zmanDisplays = ZmanimCalculator.calculateZmanim(appContext, geo.latitude, geo.longitude, geo.elevation, geo.locationName, geo.timeZone.id)
+        val zmanDisplays = ZmanimCalculator.calculateZmanim(appContext, geo)
          _uiState.value = _uiState.value.copy(
              isRefreshing = false,
              location = geo.locationName,
@@ -430,29 +410,10 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
     }
 
     private suspend fun buildGeo(lat: Double, lon: Double, altitude: Double, tz: TimeZone): GeoLocation {
-        val displayName = resolvePlaceName(lat, lon) ?: "$lat,$lon"
+        val displayName = resolvePlaceName(appContext, lat, lon) ?: "$lat,$lon"
         return GeoLocation(displayName, lat, lon, altitude, tz)
     }
 
-    private suspend fun resolvePlaceName(lat: Double, lon: Double): String? = withContext(Dispatchers.IO) {
-        try {
-            val geocoder = Geocoder(appContext, Locale.getDefault())
-            val results = geocoder.getFromLocation(lat, lon, 1)
-            val addr = results?.firstOrNull()
-            if (addr != null) {
-                when {
-                    addr.locality != null  -> addr.locality
-                    addr.featureName != null -> addr.featureName
-                    addr.subAdminArea != null -> addr.subAdminArea
-                    addr.adminArea != null -> addr.adminArea
-                    else -> null
-                }
-            } else null
-        } catch (e: Exception) {
-            Log.w("Geocoder", "reverse geocode failed", e)
-            null
-        }
-    }
 
     fun toggleZmanVisiblity(zman: ZmanDisplay) {
         val newDisabledIds = if (_uiState.value.disabledIds.contains(zman.key)) {

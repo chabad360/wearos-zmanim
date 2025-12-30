@@ -2,20 +2,15 @@ package me.chabad360.zmanim.wearos.presentation.ui
 
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberOverscrollEffect
-import androidx.compose.foundation.shape.CornerSize
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
@@ -42,18 +37,14 @@ import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.AlertDialogDefaults
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.FilledIconButton
-import androidx.wear.compose.material3.FilledTonalIconButton
 import androidx.wear.compose.material3.Icon
-import androidx.wear.compose.material3.IconButton
 import androidx.wear.compose.material3.IconButtonDefaults
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.TimeTextDefaults
 import androidx.wear.compose.material3.TimeTextDefaults.timeFormat
 import androidx.wear.compose.material3.touchTargetAwareSize
-import androidx.wear.protolayout.DimensionBuilders.dp
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
@@ -61,7 +52,6 @@ import kotlinx.datetime.toLocalDateTime
 import me.chabad360.zmanim.wearos.R
 import me.chabad360.zmanim.wearos.presentation.MainViewModel
 import me.chabad360.zmanim.wearos.presentation.ZmanDisplay
-import java.util.Date
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 

@@ -1,5 +1,7 @@
 package me.chabad360.zmanim.wearos.presentation.data
 
+import io.github.kdroidfilter.kosherkotlin.util.GeoLocation
+import kotlinx.datetime.TimeZone
 import kotlinx.serialization.Serializable
 import me.chabad360.zmanim.wearos.presentation.ZmanDisplay
 
@@ -15,6 +17,17 @@ data class SerializableLocation(
     val altitude: Double,
     val timezoneId: String
 )
+{
+    constructor(geo: GeoLocation) : this(
+        geo.locationName,
+        geo.latitude,
+        geo.longitude,
+        geo.elevation,
+        geo.timeZone.id
+    )
+
+    fun toGeoLocation() = GeoLocation(name, latitude, longitude, altitude, TimeZone.of(timezoneId))
+}
 
 /**
  * The root persistent state object.

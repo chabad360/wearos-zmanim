@@ -10,9 +10,6 @@ import androidx.work.WorkerParameters
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationToken
-import com.google.android.gms.tasks.CancellationTokenSource
-import io.github.kdroidfilter.kosherkotlin.ComplexZmanimCalendar
 import io.github.kdroidfilter.kosherkotlin.util.GeoLocation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -25,10 +22,6 @@ import me.chabad360.zmanim.wearos.presentation.data.SerializableLocation
 import me.chabad360.zmanim.wearos.tile.MainTileService
 import me.chabad360.zmanim.wearos.util.LocationHelper
 import me.chabad360.zmanim.wearos.util.ZmanimCalculator
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -97,7 +90,7 @@ class ZmanimUpdateWorker(
                         if (distance > 100) {
                             // Location changed significantly
                             newLocation = SerializableLocation(
-                                name = resolvePlaceName(location.latitude, location.longitude)
+                                name = LocationHelper.resolvePlaceName(applicationContext, location.latitude, location.longitude)
                                     ?: "${location.latitude},${location.longitude}",
                                 latitude = location.latitude,
                                 longitude = location.longitude,
@@ -128,13 +121,10 @@ class ZmanimUpdateWorker(
                     TimeZone.of(locationToUse.timezoneId)
                 )
 
-                val cal = ComplexZmanimCalendar(geo)
-                val zmanDisplays = ZmanimCalculator.computeZmanim(cal, applicationContext)
-
                 val newState = PersistentState(
                     lastComputedMillis = Clock.System.now().toEpochMilliseconds(),
                     location = locationToUse,
-                    zmanim = zmanDisplays,
+                    zmanim = ZmanimCalculator.calculateZmanim(applicationContext, geo),
                     disabledIds = currentState.disabledIds
                 )
 
@@ -154,22 +144,6 @@ class ZmanimUpdateWorker(
             Result.retry()
         }
     }
-
-    /**
-     * Resolve place name from coordinates using Geocoder
-     */
-    private suspend fun resolvePlaceName(lat: Double, lon: Double): String? =
-        withContext(Dispatchers.IO) {
-            try {
-                val geocoder = android.location.Geocoder(applicationContext, java.util.Locale.getDefault())
-                val results = geocoder.getFromLocation(lat, lon, 1)
-                val addr = results?.firstOrNull()
-                addr?.locality ?: addr?.subAdminArea
-            } catch (e: Exception) {
-                Log.w(TAG, "Geocoding failed", e)
-                null
-            }
-        }
 
     companion object {
         private const val TAG = "ZmanimUpdateWorker"
