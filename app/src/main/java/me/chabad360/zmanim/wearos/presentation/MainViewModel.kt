@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
+import me.chabad360.zmanim.wearos.complication.MainComplicationService
 import kotlin.time.Clock
 import me.chabad360.zmanim.wearos.presentation.data.DataStoreManager
 import me.chabad360.zmanim.wearos.presentation.data.PersistentState
@@ -68,7 +69,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
     }
 
     /**
-     * Restore UI state from cached persistent state
+     * Restore UI state from the cached persistent state
      */
     private fun restoreFromCache(cached: PersistentState, isStale: Boolean) {
         val geo = cached.location.toGeoLocation()
@@ -119,6 +120,7 @@ class MainViewModel(private val appContext: Context) : ViewModel() {
 
             // Request tile update after persisting data
             MainTileService.requestUpdate(appContext)
+            MainComplicationService.requestUpdate(appContext)
         }
     }
 

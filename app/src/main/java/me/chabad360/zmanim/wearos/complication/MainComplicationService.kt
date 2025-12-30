@@ -1,6 +1,8 @@
 package me.chabad360.zmanim.wearos.complication
 
 import android.app.PendingIntent
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.text.format.DateFormat
 import android.util.Log
@@ -9,6 +11,7 @@ import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.data.RangedValueComplicationData
+import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import kotlinx.coroutines.flow.first
@@ -145,15 +148,15 @@ class MainComplicationService : SuspendingComplicationDataSourceService() {
             .build()
     }
 
-    /**
-     * Format duration for content description
-     */
-    private fun formatDuration(duration: kotlin.time.Duration): String {
-        val minutes = duration.inWholeMinutes
-        return when {
-            minutes < 1 -> "less than 1 minute"
-            minutes == 1L -> "1 minute"
-            else -> "$minutes minutes"
+    companion object {
+        /**
+         * Request an update of the tile from anywhere in the app
+         */
+        fun requestUpdate(context: Context) {
+            ComplicationDataSourceUpdateRequester.create(
+                context = context,
+                complicationDataSourceComponent = ComponentName(context, MainComplicationService::class.java)
+            ).requestUpdateAll()
         }
     }
 }
