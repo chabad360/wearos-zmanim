@@ -65,17 +65,17 @@ class MainComplicationService : SuspendingTimelineComplicationDataSourceService(
 
             // Filter out disabled zmanim and get next upcoming one
             val now = System.currentTimeMillis() / 1000 // Convert to seconds
-            val nextZman = persistentState.zmanim
+            val nextZmanim = persistentState.zmanim
                 .filter { it.fromEpoch != null && !persistentState.disabledIds.contains(it.key) }
                 .filter { it.fromEpoch!! >= now }
-                .minByOrNull { it.fromEpoch!! }
+                .sortedBy { it.fromEpoch }
 
-            if (nextZman == null) {
+            if (nextZmanim.isEmpty()) {
                 Log.w(TAG, "No upcoming zmanim found")
                 return ComplicationDataTimeline(createNoDataComplication(), emptyList())
             }
 
-            return ComplicationDataTimeline(createNoDataComplication(), listOf(
+            return ComplicationDataTimeline(createNoDataComplication(), nextZmanim.map { nextZman ->
                 TimelineEntry(
                     validity = TimeInterval(
                         start = Clock.System.now().toJavaInstant(),
@@ -88,7 +88,7 @@ class MainComplicationService : SuspendingTimelineComplicationDataSourceService(
                         zmanEpoch = nextZman.fromEpoch
                     )
                 )
-            ))
+            })
         } catch (e: Exception) {
             Log.e(TAG, "Error creating complication", e)
             ComplicationDataTimeline(createNoDataComplication(), emptyList())
